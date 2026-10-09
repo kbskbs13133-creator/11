@@ -1,0 +1,191 @@
+// 포인트 예치 기반 이자 지급 플랫폼 - Prisma 스키마
+// 금액: Decimal(18,2), 이율(%): Decimal(9,4)
+// 날짜 기준: 한국 시간(KST) 달력 날짜를 @db.Date 로 저장 (UTC 자정 값으로 표현)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL") // 앱용 (Neon: pooled 주소)
+  directUrl = env("DATABASE_URL_UNPOOLED") // 마이그레이션용 (Neon: direct 주소)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DepositStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  CHARGE // 유저 충전 신청
+  WITHDRAW // 유저 환전(출금) 신청
+  ADMIN_CHARGE // 관리자 직접 충전 (즉시 APPROVED)
+}
+
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BatchTrigger {
+  CRON // Vercel Cron / 외부 cron 호출
+  NODE // node-cron 스케줄러
+  MANUAL // 관리자 수동 실행
+}
+
+enum BatchStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(USER)
+  pointBalance Decimal  @default(0) @db.Decimal(18, 2)
+  vipLevel     Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  vip                   VipLevel           @relation(fields: [vipLevel], references: [level])
+  deposits              Deposit[]
+  interestLogs          InterestLog[]
+  transactions          PointTransaction[] @relation("TransactionUser")
+  processedTransactions PointTransaction[] @relation("TransactionProcessor")
+
+  @@index([role])
+}
+
+model VipLevel {
+  level     Int      @id // 1 ~ 5
+  name      String
+  bonusRate Decimal  @default(0) @db.Decimal(9, 4) // 추가 이율(%)
+  updatedAt DateTime @updatedAt
+
+  users User[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @db.Text
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rates    ProductRate[]
+  deposits Deposit[]
+}
+
+model ProductRate {
+  id        String   @id @default(cuid())
+  productId String
+  termDays  Int // 예치 기간(일)
+  rate      Decimal  @db.Decimal(9, 4) // 해당 기간 동안의 총 수익률(%)
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, termDays])
+}
+
+model Deposit {
+  id               String        @id @default(cuid())
+  userId           String
+  productId        String
+  productName      String // 상품명 스냅샷
+  principal        Decimal       @db.Decimal(18, 2) // 원금
+  termDays         Int // 예치 기간(일)
+  baseRate         Decimal       @db.Decimal(9, 4) // 상품 기본이율 스냅샷
+  vipLevel         Int // 예치 시점 VIP 등급 스냅샷
+  vipBonusRate     Decimal       @db.Decimal(9, 4) // VIP 추가이율 스냅샷
+  totalRate        Decimal       @db.Decimal(9, 4) // 총이율 = 기본 + VIP
+  expectedInterest Decimal       @db.Decimal(18, 2) // 만기 시 총 예상 이자
+  startDate        DateTime      @db.Date // 시작일 (KST)
+  endDate          DateTime      @db.Date // 만기일 (KST) = 시작일 + termDays
+  status           DepositStatus @default(ACTIVE)
+  accruedInterest  Decimal       @default(0) @db.Decimal(18, 2) // 누적 지급 이자
+  lastInterestDate DateTime?     @db.Date // 마지막 이자 지급일 (KST)
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id])
+  product      Product       @relation(fields: [productId], references: [id])
+  interestLogs InterestLog[]
+
+  @@index([status, lastInterestDate])
+  @@index([userId, status])
+}
+
+model InterestLog {
+  id           String   @id @default(cuid())
+  depositId    String
+  userId       String
+  interestDate DateTime @db.Date // 이자 귀속일 (KST)
+  dayIndex     Int // 예치 n일차 (1 ~ termDays)
+  amount       Decimal  @db.Decimal(18, 2)
+  balanceAfter Decimal  @db.Decimal(18, 2) // 지급 후 유저 잔액
+  batchRunId   String?
+  createdAt    DateTime @default(now())
+
+  deposit  Deposit   @relation(fields: [depositId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  batchRun BatchRun? @relation(fields: [batchRunId], references: [id])
+
+  // 같은 예치건에 같은 날짜 이자가 두 번 지급되는 것을 DB 레벨에서 차단
+  @@unique([depositId, interestDate])
+  @@index([userId, createdAt])
+}
+
+model PointTransaction {
+  id            String            @id @default(cuid())
+  userId        String
+  type          TransactionType
+  amount        Decimal           @db.Decimal(18, 2)
+  status        TransactionStatus @default(PENDING)
+  memo          String? // 유저 메모 (입금자명/계좌 등)
+  rejectReason  String?
+  processedById String?
+  processedAt   DateTime?
+  balanceAfter  Decimal?          @db.Decimal(18, 2) // 승인 처리 후 잔액
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user        User  @relation("TransactionUser", fields: [userId], references: [id])
+  processedBy User? @relation("TransactionProcessor", fields: [processedById], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model BatchRun {
+  id             String       @id @default(cuid())
+  trigger        BatchTrigger
+  targetDate     DateTime     @db.Date // 배치 기준일 (KST)
+  status         BatchStatus  @default(RUNNING)
+  processedCount Int          @default(0) // 이자 지급된 예치건 수
+  interestCount  Int          @default(0) // 생성된 InterestLog 수
+  totalInterest  Decimal      @default(0) @db.Decimal(18, 2)
+  completedCount Int          @default(0) // 만기 해제 건수
+  failedCount    Int          @default(0)
+  errorMessage   String?      @db.Text
+  startedAt      DateTime     @default(now())
+  finishedAt     DateTime?
+
+  interestLogs InterestLog[]
+}
