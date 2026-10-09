@@ -1,0 +1,24 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: ["./src/**/*.{ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: "#eef5ff",
+          100: "#d9e8ff",
+          500: "#3b82f6",
+          600: "#2563eb",
+          700: "#1d4ed8",
+          900: "#1e3a8a",
+        },
+      },
+      fontFamily: {
+        sans: ["Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "system-ui", "sans-serif"],
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
