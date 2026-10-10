@@ -1,3 +1,5 @@
+"use client";
+import { useT } from "@/components/LocaleProvider";
 type Tone = "gray" | "blue" | "green" | "red" | "amber" | "purple" | "gold";
 
 const tones: Record<Tone, string> = {
@@ -19,21 +21,24 @@ export default function Badge({ tone = "gray", children }: { tone?: Tone; childr
 }
 
 export function TxStatusBadge({ status }: { status: string }) {
-  if (status === "PENDING") return <Badge tone="amber">처리중</Badge>;
-  if (status === "APPROVED") return <Badge tone="green">처리완료</Badge>;
-  return <Badge tone="red">거절됨</Badge>;
+  const tr = useT();
+  if (status === "PENDING") return <Badge tone="amber">{tr("처리중")}</Badge>;
+  if (status === "APPROVED") return <Badge tone="green">{tr("처리완료")}</Badge>;
+  return <Badge tone="red">{tr("거절됨")}</Badge>;
 }
 
 export function TxTypeBadge({ type }: { type: string }) {
-  if (type === "CHARGE") return <Badge tone="blue">충전 신청</Badge>;
-  if (type === "WITHDRAW") return <Badge tone="purple">환전 신청</Badge>;
-  return <Badge tone="gray">관리자 충전</Badge>;
+  const tr = useT();
+  if (type === "CHARGE") return <Badge tone="blue">{tr("충전 신청")}</Badge>;
+  if (type === "WITHDRAW") return <Badge tone="purple">{tr("환전 신청")}</Badge>;
+  return <Badge tone="gray">{tr("관리자 충전")}</Badge>;
 }
 
 export function DepositStatusBadge({ status }: { status: string }) {
-  if (status === "ACTIVE") return <Badge tone="blue">진행중</Badge>;
-  if (status === "COMPLETED") return <Badge tone="green">완료</Badge>;
-  return <Badge tone="red">취소</Badge>;
+  const tr = useT();
+  if (status === "ACTIVE") return <Badge tone="blue">{tr("진행중@status")}</Badge>;
+  if (status === "COMPLETED") return <Badge tone="green">{tr("완료@status")}</Badge>;
+  return <Badge tone="red">{tr("취소@status")}</Badge>;
 }
 
 export function VipBadge({ level, name }: { level: number; name?: string }) {

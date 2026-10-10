@@ -7,17 +7,17 @@ const D = (v: string | number) => new Prisma.Decimal(v);
 async function main() {
   // 1) VIP 등급 1~5 기본값
   const vipDefaults = [
-    { level: 1, name: "브론즈", bonusRate: "0" },
-    { level: 2, name: "실버", bonusRate: "0.5" },
-    { level: 3, name: "골드", bonusRate: "1" },
-    { level: 4, name: "플래티넘", bonusRate: "1.5" },
-    { level: 5, name: "다이아몬드", bonusRate: "2" },
+    { level: 1, name: "브론즈", nameEn: "Bronze", bonusRate: "0" },
+    { level: 2, name: "실버", nameEn: "Silver", bonusRate: "0.5" },
+    { level: 3, name: "골드", nameEn: "Gold", bonusRate: "1" },
+    { level: 4, name: "플래티넘", nameEn: "Platinum", bonusRate: "1.5" },
+    { level: 5, name: "다이아몬드", nameEn: "Diamond", bonusRate: "2" },
   ];
   for (const v of vipDefaults) {
     await prisma.vipLevel.upsert({
       where: { level: v.level },
       update: {},
-      create: { level: v.level, name: v.name, bonusRate: D(v.bonusRate) },
+      create: { level: v.level, name: v.name, nameEn: v.nameEn, bonusRate: D(v.bonusRate) },
     });
   }
 
@@ -36,7 +36,7 @@ async function main() {
     update: {},
     create: {
       email: adminEmail,
-      name: "관리자",
+      name: "Admin",
       role: "ADMIN",
       passwordHash: await bcrypt.hash(adminPassword, 10),
       vipLevel: 1,
@@ -49,8 +49,10 @@ async function main() {
     await prisma.product.create({
       data: {
         name: "안정형 포인트 예치",
-        description:
-          "원금 보장형 기본 예치 상품입니다.\n매일 자정 일할 계산된 이자가 자동 지급되며, 만기일에 원금이 자동 반환됩니다.",
+        nameEn: "Stable Point Deposit",
+        description: "기본 예치 상품입니다.\n매일 자정 일할 계산된 이자가 자동 지급되며, 만기일에 원금이 자동 정산됩니다.",
+        descriptionEn:
+          "Our standard deposit product.\nInterest calculated on a daily basis is paid automatically every midnight, and the principal is settled automatically on the maturity date.",
         isActive: true,
         sortOrder: 1,
         rates: {
@@ -66,7 +68,9 @@ async function main() {
     await prisma.product.create({
       data: {
         name: "단기 부스트 예치",
+        nameEn: "Short-Term Boost Deposit",
         description: "짧은 기간 동안 높은 수익률을 제공하는 단기 상품입니다.\n이벤트 기간 한정으로 운영될 수 있습니다.",
+        descriptionEn: "A short-term product offering a higher return over a short period.\nIt may be offered for a limited event period only.",
         isActive: true,
         sortOrder: 2,
         rates: {

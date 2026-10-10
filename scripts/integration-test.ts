@@ -302,6 +302,20 @@ async function main() {
   }
   const adminOnUser = await admin.raw("/dashboard");
   check("ADMIN → /dashboard 는 /admin 으로 리다이렉트", adminOnUser.status === 307 && (adminOnUser.headers.get("location") ?? "").includes("/admin"));
+  const yieldPage = await user.raw("/yield");
+  check("USER /yield → 200", yieldPage.status === 200, yieldPage.status);
+  const strategyAsUser = await user.raw("/strategy");
+  check("USER /strategy → /yield 리다이렉트", strategyAsUser.status === 307 && (strategyAsUser.headers.get("location") ?? "").includes("/yield"));
+
+  section("9. 다국어 (EN 기본 / KO 토글)");
+  const enPage = await fetch(`${BASE}/strategy`, { redirect: "manual" });
+  const enHtml = await enPage.text();
+  check("기본 언어 = 영어 (<html lang=en>)", enPage.status === 200 && enHtml.includes('<html lang="en"'), enPage.status);
+  check("영어 문구 + 브랜드 D.C Asset 표시", enHtml.includes("Log in") && enHtml.includes("D.C Asset"));
+  check("위험 고지(Risk Framework) 섹션 제거", !enHtml.includes('id="risk"') && !enHtml.includes("Risk Framework"));
+  const koPage = await fetch(`${BASE}/strategy`, { redirect: "manual", headers: { cookie: "lang=ko" } });
+  const koHtml = await koPage.text();
+  check("lang=ko 쿠키 → 한국어 표시", koHtml.includes('<html lang="ko"') && koHtml.includes("로그인"));
 
   console.log(`\n결과: ✅ ${passed} 통과 / ❌ ${failed} 실패`);
   if (failed > 0) process.exitCode = 1;

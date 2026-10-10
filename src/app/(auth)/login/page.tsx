@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import LoginForm from "./LoginForm";
+import { pageTitle } from "@/lib/i18n/server";
 
-export const metadata = { title: "로그인 | 포인트 예치 플랫폼" };
+export const generateMetadata = pageTitle("로그인");
 
 export default function LoginPage() {
   return (

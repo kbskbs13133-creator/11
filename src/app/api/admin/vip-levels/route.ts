@@ -23,8 +23,8 @@ export const PUT = handler(async (req: Request) => {
     levels.map((l) =>
       prisma.vipLevel.upsert({
         where: { level: l.level },
-        update: { name: l.name, bonusRate: toDec(l.bonusRate) },
-        create: { level: l.level, name: l.name, bonusRate: toDec(l.bonusRate) },
+        update: { name: l.name, nameEn: l.nameEn, bonusRate: toDec(l.bonusRate) },
+        create: { level: l.level, name: l.name, nameEn: l.nameEn, bonusRate: toDec(l.bonusRate) },
       })
     )
   );

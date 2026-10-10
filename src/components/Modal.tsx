@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useT } from "@/components/LocaleProvider";
 
 export default function Modal({
   open,
@@ -15,6 +16,7 @@ export default function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const tr = useT();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -40,7 +42,7 @@ export default function Modal({
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label="닫기">
+          <button onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600" aria-label={tr("닫기")}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
           </button>
         </div>

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { formatRate, termLabel } from "@/lib/format";
@@ -8,13 +10,17 @@ import { ProductShowcase, RateTicker, SectionTitle, StepsSection, VipShowcase, p
 // 로그인한 사용자는 미들웨어에서 역할별 홈으로 이동하고, 비로그인 방문자에게만 이 소개 페이지가 보입니다.
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: `${BRAND.title} | 맡겨둔 포인트가 매일 이자로`,
-  description: "기간별 이율이 적용되는 포인트 예치 상품. 이자는 매일 자정 정산됩니다.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const tr = getT();
+  return {
+    title: `${BRAND.title} | ${tr("맡겨둔 포인트가 매일 이자로")}`,
+    description: tr("기간별 이율이 적용되는 포인트 예치 상품. 이자는 매일 자정 정산됩니다."),
+  };
+}
 
 export default async function LandingPage() {
-  const data = await loadShowcase();
+  const tr = getT();
+  const data = await loadShowcase(tr.locale);
   const { products, vips, best, maxRate, topVip } = data;
 
   return (
@@ -31,36 +37,55 @@ export default async function LandingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500 opacity-60" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-500" />
               </span>
-              매일 자정, 자동 이자 지급
+              {tr("매일 자정, 자동 이자 지급")}
             </span>
             <h1 className="mt-6 text-[2.35rem] font-bold leading-[1.18] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.4rem]">
-              잠들어 있는 포인트,
-              <br />
-              <span className="text-gold">매일 이자</span>로 깨우세요
+              {tr.locale === "en" ? (
+                <>
+                  Wake your idle points
+                  <br />
+                  with <span className="text-gold">daily interest</span>
+                </>
+              ) : (
+                <>
+                  잠들어 있는 포인트,
+                  <br />
+                  <span className="text-gold">매일 이자</span>로 깨우세요
+                </>
+              )}
             </h1>
             <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-slate-500">
-              원하는 기간을 고르면 <b className="font-semibold text-slate-800">예치 시점의 이율</b>이 만기까지 적용됩니다.
-              이자는 매일 자정 정산되고, 만기일에는 <b className="font-semibold text-slate-800">원금이 자동으로 정산</b>됩니다.{" "}
-              <Link href="/strategy" className="whitespace-nowrap font-semibold text-brand-600 hover:underline">수익은 어디서 오나요? →</Link>
+              {tr.locale === "en" ? (
+                <>
+                  Pick the term you want and <b className="font-semibold text-slate-800">the rate at the time of deposit</b> applies until maturity.
+                  Interest is settled every midnight, and on the maturity date <b className="font-semibold text-slate-800">your principal is settled automatically</b>.{" "}
+                </>
+              ) : (
+                <>
+                  원하는 기간을 고르면 <b className="font-semibold text-slate-800">예치 시점의 이율</b>이 만기까지 적용됩니다.
+                  이자는 매일 자정 정산되고, 만기일에는 <b className="font-semibold text-slate-800">원금이 자동으로 정산</b>됩니다.{" "}
+                </>
+              )}
+              <Link href="/strategy" className="whitespace-nowrap font-semibold text-brand-600 hover:underline">{tr("수익은 어디서 오나요? →")}</Link>
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/signup" className="btn-primary !rounded-full !px-6 !py-3">
-                지금 시작하기 <span aria-hidden>→</span>
+                {tr("지금 시작하기")} <span aria-hidden>→</span>
               </Link>
-              <a href="#products" className="btn-secondary !rounded-full !px-6 !py-3">상품 살펴보기</a>
+              <a href="#products" className="btn-secondary !rounded-full !px-6 !py-3">{tr("상품 살펴보기")}</a>
             </div>
             <ul className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-white/[0.06] pt-6 text-xs text-slate-500">
               <li>
-                <div className="text-lg font-bold text-slate-900">매일</div>
-                일 단위 이자 지급
+                <div className="text-lg font-bold text-slate-900">{tr("매일")}</div>
+                {tr("일 단위 이자 지급")}
               </li>
               <li>
-                <div className="text-lg font-bold text-slate-900">자동</div>
-                만기 원금 정산
+                <div className="text-lg font-bold text-slate-900">{tr("자동")}</div>
+                {tr("만기 원금 정산")}
               </li>
               <li>
                 <div className="text-lg font-bold text-slate-900">+{pp(topVip?.bonusRate ?? "0")}</div>
-                VIP 최대 추가 이율
+                {tr("VIP 최대 추가 이율")}
               </li>
             </ul>
           </div>
@@ -96,12 +121,12 @@ export default async function LandingPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="eyebrow">BEST RATE</p>
-                    <p className="mt-1 text-xs text-slate-500">{best ? `${best.product} · ${termLabel(best.termDays)}` : "상품 준비중"}</p>
+                    <p className="mt-1 text-xs text-slate-500">{best ? `${best.product} · ${termLabel(best.termDays, tr.locale)}` : tr("상품 준비중")}</p>
                   </div>
                   <span className="h-9 w-12 rounded-md border border-brand-300/50 bg-gradient-to-br from-brand-700/80 via-brand-400/60 to-brand-300/40 shadow-inner" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">기간 적용 이율</p>
+                  <p className="text-xs text-slate-500">{tr("기간 적용 이율")}</p>
                   <p className="mt-1 text-6xl font-bold tracking-tight text-gold sm:text-7xl">
                     {best ? formatRate(best.rate) : "-"}
                   </p>
@@ -115,12 +140,12 @@ export default async function LandingPage() {
 
             {/* 떠 있는 정보 칩 */}
             <div className="absolute -top-6 left-6 hidden animate-float rounded-2xl border border-white/10 bg-ink-800/90 px-4 py-3 shadow-2xl backdrop-blur sm:block">
-              <p className="text-[10px] tracking-wider text-slate-400">매일 00:00</p>
-              <p className="text-sm font-semibold text-emerald-600">이자 자동 지급</p>
+              <p className="text-[10px] tracking-wider text-slate-400">{tr("매일 00:00")}</p>
+              <p className="text-sm font-semibold text-emerald-600">{tr("이자 자동 지급")}</p>
             </div>
             <div className="absolute -bottom-7 right-6 hidden animate-float rounded-2xl border border-white/10 bg-ink-800/90 px-4 py-3 shadow-2xl backdrop-blur [animation-delay:1.5s] sm:block">
               <p className="text-[10px] tracking-wider text-slate-400">{topVip ? `VIP ${topVip.level} · ${topVip.name}` : "VIP"}</p>
-              <p className="text-sm font-semibold text-brand-600">추가 이율 +{pp(topVip?.bonusRate ?? "0")}</p>
+              <p className="text-sm font-semibold text-brand-600">{tr("추가 이율")} +{pp(topVip?.bonusRate ?? "0")}</p>
             </div>
           </div>
         </div>
@@ -132,10 +157,10 @@ export default async function LandingPage() {
       <section className="mx-auto max-w-6xl px-4 py-14">
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.06] lg:grid-cols-4">
           {[
-            { k: "운용 상품", v: `${products.length}개` },
-            { k: "최고 기간 수익률", v: best ? formatRate(best.rate) : "-" },
-            { k: "VIP 등급", v: `${vips.length}단계` },
-            { k: "이자 지급", v: "매일 00:00" },
+            { k: tr("운용 상품"), v: tr("{n}개", { n: products.length }) },
+            { k: tr("최고 기간 수익률"), v: best ? formatRate(best.rate) : "-" },
+            { k: tr("VIP 등급"), v: tr("{n}단계", { n: vips.length }) },
+            { k: tr("이자 지급"), v: tr("매일 00:00") },
           ].map((s) => (
             <div key={s.k} className="bg-ink-900 px-6 py-6 text-center">
               <div className="text-2xl font-bold tracking-tight text-gold sm:text-3xl">{s.v}</div>
@@ -147,19 +172,19 @@ export default async function LandingPage() {
 
       {/* ───────── 상품 ───────── */}
       <section id="products" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-        <SectionTitle eyebrow="PRODUCTS" title="기간을 고르면," gold="이율이 적용" tail="됩니다" desc="표시된 이율은 해당 기간 전체 기준이며 매일 나누어 정산됩니다. 운용 전략에는 위험이 따르므로 수익 구조와 위험 고지를 꼭 확인하세요." />
+        <SectionTitle eyebrow="PRODUCTS" title={tr("기간을 고르면,")} gold={tr("이율이 적용")} tail={tr("됩니다")} desc={tr("표시된 이율은 해당 기간 전체 기준이며 매일 나누어 정산됩니다. 예치 전 수익 구조를 꼭 확인하세요.")} />
         <ProductShowcase products={products} maxRate={maxRate} href="/signup" />
       </section>
 
       {/* ───────── 이용 방법 ───────── */}
       <section id="how" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-        <SectionTitle eyebrow="HOW IT WORKS" title="단 네 걸음이면" gold="충분합니다" />
+        <SectionTitle eyebrow="HOW IT WORKS" title={tr("단 네 걸음이면")} gold={tr("충분합니다")} />
         <StepsSection
           steps={[
-            { t: "회원가입", d: "이메일과 비밀번호만으로 1분 안에 계정을 만듭니다." },
-            { t: "포인트 충전", d: "충전을 신청하면 관리자 확인 후 즉시 반영됩니다." },
-            { t: "상품 예치", d: "원하는 상품과 기간을 고르면 그 시점의 이율이 만기까지 적용됩니다." },
-            { t: "매일 이자 · 만기 정산", d: "매일 자정 이자가 정산되고, 만기일에 원금이 정산됩니다." },
+            { t: tr("회원가입"), d: tr("이메일과 비밀번호만으로 1분 안에 계정을 만듭니다.") },
+            { t: tr("포인트 충전"), d: tr("충전을 신청하면 관리자 확인 후 즉시 반영됩니다.") },
+            { t: tr("상품 예치"), d: tr("원하는 상품과 기간을 고르면 그 시점의 이율이 만기까지 적용됩니다.") },
+            { t: tr("매일 이자 · 만기 정산"), d: tr("매일 자정 이자가 정산되고, 만기일에 원금이 정산됩니다.") },
           ]}
         />
       </section>
@@ -167,7 +192,7 @@ export default async function LandingPage() {
       {/* ───────── VIP ───────── */}
       {vips.length > 0 && (
         <section id="vip" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-          <SectionTitle eyebrow="VIP MEMBERSHIP" title="등급이 높을수록," gold="이율도 높아집니다" desc="VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급 기준으로 적용됩니다." />
+          <SectionTitle eyebrow="VIP MEMBERSHIP" title={tr("등급이 높을수록,")} gold={tr("이율도 높아집니다")} desc={tr("VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급 기준으로 적용됩니다.")} />
           <VipShowcase vips={vips} topVip={topVip} />
         </section>
       )}
@@ -178,14 +203,24 @@ export default async function LandingPage() {
           <div aria-hidden className="absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-gradient-to-r from-transparent via-brand-500/70 to-transparent" />
           <p className="eyebrow">START TODAY</p>
           <h2 className="mt-4 text-2xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl">
-            오늘 맡긴 포인트가
-            <br />
-            <span className="text-gold">내일 아침 이자</span>로 돌아옵니다
+            {tr.locale === "en" ? (
+              <>
+                Points you deposit today
+                <br />
+                return as <span className="text-gold">interest tomorrow morning</span>
+              </>
+            ) : (
+              <>
+                오늘 맡긴 포인트가
+                <br />
+                <span className="text-gold">내일 아침 이자</span>로 돌아옵니다
+              </>
+            )}
           </h2>
-          <p className="mx-auto mt-4 max-w-md text-sm text-slate-500">가입은 무료이며, 1분이면 충분합니다.</p>
+          <p className="mx-auto mt-4 max-w-md text-sm text-slate-500">{tr("가입은 무료이며, 1분이면 충분합니다.")}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/signup" className="btn-primary !rounded-full !px-7 !py-3">무료로 시작하기 →</Link>
-            <Link href="/login" className="btn-secondary !rounded-full !px-7 !py-3">로그인</Link>
+            <Link href="/signup" className="btn-primary !rounded-full !px-7 !py-3">{tr("무료로 시작하기 →")}</Link>
+            <Link href="/login" className="btn-secondary !rounded-full !px-7 !py-3">{tr("로그인")}</Link>
           </div>
         </div>
       </section>

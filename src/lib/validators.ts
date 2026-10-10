@@ -22,7 +22,9 @@ export const MAX_PRODUCTS = 10;
 
 export const productSchema = z.object({
   name: z.string().trim().min(1, "상품명을 입력해주세요.").max(50, "상품명은 50자 이하입니다."),
+  nameEn: z.string().trim().max(80, "영문 상품명은 80자 이하입니다.").default(""),
   description: z.string().max(5000, "설명은 5000자 이하입니다.").default(""),
+  descriptionEn: z.string().max(5000, "영문 설명은 5000자 이하입니다.").default(""),
   isActive: z.boolean().default(true),
   sortOrder: z.coerce.number().int().min(0).max(999).default(0),
   rates: z
@@ -59,6 +61,7 @@ export const vipLevelsSchema = z.object({
       z.object({
         level: z.number().int().min(1).max(5),
         name: z.string().trim().min(1, "등급명을 입력해주세요.").max(20),
+        nameEn: z.string().trim().max(30).default(""),
         bonusRate: rateSchema,
       })
     )

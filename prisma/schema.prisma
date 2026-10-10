@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL") // 앱용 (Neon: pooled 주소)
   directUrl = env("DATABASE_URL_UNPOOLED") // 마이그레이션용 (Neon: direct 주소)
 }
@@ -71,6 +71,7 @@ model User {
 model VipLevel {
   level     Int      @id // 1 ~ 5
   name      String
+  nameEn    String   @default("") // 영문 등급명 (비우면 name 사용)
   bonusRate Decimal  @default(0) @db.Decimal(9, 4) // 추가 이율(%)
   updatedAt DateTime @updatedAt
 
@@ -78,13 +79,15 @@ model VipLevel {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String
-  description String   @db.Text
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  nameEn        String   @default("") // 영문 상품명 (비우면 name 사용)
+  description   String   @db.Text
+  descriptionEn String   @default("") @db.Text // 영문 설명 (비우면 description 사용)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   rates    ProductRate[]
   deposits Deposit[]
@@ -107,6 +110,7 @@ model Deposit {
   userId           String
   productId        String
   productName      String // 상품명 스냅샷
+  productNameEn    String        @default("") // 영문 상품명 스냅샷
   principal        Decimal       @db.Decimal(18, 2) // 원금
   termDays         Int // 예치 기간(일)
   baseRate         Decimal       @db.Decimal(9, 4) // 상품 기본이율 스냅샷

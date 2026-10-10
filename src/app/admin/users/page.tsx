@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { s2, vipName } from "./helpers";
+import { getLocale } from "@/lib/i18n/server";
 import UserTable from "./UserTable";
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string } }) {
@@ -21,7 +22,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
   return (
     <UserTable
       q={q}
-      vipLevels={vipLevels.map((v) => ({ level: v.level, name: vipName(v) }))}
+      vipLevels={vipLevels.map((v) => ({ level: v.level, name: vipName(v, getLocale()) }))}
       users={users.map((u) => ({
         id: u.id,
         name: u.name,

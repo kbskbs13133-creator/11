@@ -17,8 +17,16 @@ export function formatRate(value: string | number): string {
   return `${s}%`;
 }
 
-/** 기간(일) → 한글 라벨 */
-export function termLabel(days: number): string {
+/** 기간(일) → 라벨 (ko: 12개월 / en: 12 months) */
+export function termLabel(days: number, locale: "ko" | "en" = "ko"): string {
+  if (locale === "en") {
+    const u = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+    if (days === 365) return "12 months";
+    if (days % 365 === 0) return u(days / 365, "year");
+    if (days % 30 === 0) return u(days / 30, "month");
+    if (days % 7 === 0) return u(days / 7, "week");
+    return u(days, "day");
+  }
   if (days === 365) return "12개월";
   if (days % 365 === 0) return `${days / 365}년`;
   if (days % 30 === 0) return `${days / 30}개월`;

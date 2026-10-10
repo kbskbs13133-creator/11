@@ -4,8 +4,9 @@ import { getBalanceSummary } from "@/lib/balance";
 import { transactionDTO } from "@/lib/serializers";
 import { s2 } from "@/lib/money";
 import Wallet from "./Wallet";
+import { pageTitle } from "@/lib/i18n/server";
 
-export const metadata = { title: "지갑 | 포인트 예치 플랫폼" };
+export const generateMetadata = pageTitle("지갑");
 
 export default async function WalletPage() {
   const me = await requireUserPage();

@@ -3,8 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { signIn, getSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { useT } from "@/components/LocaleProvider";
 
 export default function LoginForm() {
+  const tr = useT();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +21,7 @@ export default function LoginForm() {
     const res = await signIn("credentials", { email, password, redirect: false });
     if (!res || res.error) {
       setLoading(false);
-      setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+      setError(tr("이메일 또는 비밀번호가 올바르지 않습니다."));
       return;
     }
     const session = await getSession();
@@ -38,26 +40,26 @@ export default function LoginForm() {
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <p className="eyebrow">WELCOME BACK</p>
-        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">로그인</h2>
+        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{tr("로그인")}</h2>
       </div>
       {justSignedUp && (
-        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">회원가입이 완료되었습니다. 로그인해주세요.</p>
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{tr("회원가입이 완료되었습니다. 로그인해주세요.")}</p>
       )}
       <div>
-        <label className="label" htmlFor="email">이메일</label>
+        <label className="label" htmlFor="email">{tr("이메일")}</label>
         <input id="email" type="email" className="input" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
       </div>
       <div>
-        <label className="label" htmlFor="password">비밀번호</label>
+        <label className="label" htmlFor="password">{tr("비밀번호")}</label>
         <input id="password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
       </div>
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <button type="submit" className="btn-primary w-full" disabled={loading}>
-        {loading ? "로그인 중..." : "로그인"}
+        {loading ? tr("로그인 중...") : tr("로그인")}
       </button>
       <p className="text-center text-sm text-slate-500">
-        계정이 없으신가요?{" "}
-        <Link href="/signup" className="font-semibold text-brand-600 hover:underline">회원가입</Link>
+        {tr("계정이 없으신가요?")}{" "}
+        <Link href="/signup" className="font-semibold text-brand-600 hover:underline">{tr("회원가입")}</Link>
       </p>
     </form>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatRate, termLabel } from "@/lib/format";
 import type { ShowcaseData, ShowcaseProduct, ShowcaseVip } from "@/lib/showcase";
+import { getT } from "@/lib/i18n/server";
 
 // 소개 페이지(/)와 회원 홈(/home)에서 함께 쓰는 섹션 컴포넌트
 
@@ -21,6 +22,7 @@ export function SectionTitle({ eyebrow, title, gold, tail, desc }: { eyebrow: st
 
 /** 상품·기간별 수익률이 흐르는 띠 */
 export function RateTicker({ data }: { data: ShowcaseData }) {
+  const tr = getT();
   if (data.allRates.length === 0) return null;
   const items = [...data.allRates, ...data.allRates];
   return (
@@ -31,7 +33,7 @@ export function RateTicker({ data }: { data: ShowcaseData }) {
         {items.map((r, i) => (
           <span key={i} className="flex items-center gap-3 text-slate-500">
             <span className="h-1 w-1 rounded-full bg-brand-500" />
-            {r.product} · {termLabel(r.termDays)}
+            {r.product} · {termLabel(r.termDays, tr.locale)}
             <b className="font-semibold text-brand-600">{formatRate(r.rate)}</b>
           </span>
         ))}
@@ -42,7 +44,8 @@ export function RateTicker({ data }: { data: ShowcaseData }) {
 
 /** 상품 카드 그리드 (기간별 이율 막대) */
 export function ProductShowcase({ products, maxRate, href, cta = "예치하기" }: { products: ShowcaseProduct[]; maxRate: number; href: string; cta?: string }) {
-  if (products.length === 0) return <div className="card mt-10 text-center text-sm text-slate-500">곧 새로운 상품이 공개됩니다.</div>;
+  const tr = getT();
+  if (products.length === 0) return <div className="card mt-10 text-center text-sm text-slate-500">{tr("곧 새로운 상품이 공개됩니다.")}</div>;
   return (
     <div className="mt-12 grid gap-5 md:grid-cols-2">
       {products.map((p, idx) => {
@@ -59,15 +62,15 @@ export function ProductShowcase({ products, maxRate, href, cta = "예치하기" 
                 <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{p.name}</h3>
               </div>
               <div className="shrink-0 text-right">
-                <div className="text-[11px] text-slate-400">최대</div>
+                <div className="text-[11px] text-slate-400">{tr("최대")}</div>
                 <div className="text-2xl font-bold text-gold">{formatRate(top.rate)}</div>
               </div>
             </div>
             {p.description && <p className="relative mt-3 line-clamp-2 whitespace-pre-line text-sm leading-relaxed text-slate-500">{p.description}</p>}
             <ul className="relative mt-6 space-y-3">
               {p.rates.map((r) => (
-                <li key={r.termDays} className="grid grid-cols-[64px_1fr_56px] items-center gap-3 text-sm">
-                  <span className="text-slate-500">{termLabel(r.termDays)}</span>
+                <li key={r.termDays} className="grid grid-cols-[84px_1fr_56px] items-center gap-3 text-sm">
+                  <span className="whitespace-nowrap text-slate-500">{termLabel(r.termDays, tr.locale)}</span>
                   <span className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
                     <span
                       className="block h-full rounded-full bg-gradient-to-r from-brand-300 via-brand-500 to-brand-700"
@@ -79,9 +82,9 @@ export function ProductShowcase({ products, maxRate, href, cta = "예치하기" 
               ))}
             </ul>
             <div className="relative mt-7 flex items-center justify-between border-t border-white/[0.06] pt-5">
-              <span className="text-xs text-slate-400">{p.rates.length}개 기간 선택 가능</span>
+              <span className="text-xs text-slate-400">{tr("{n}개 기간 선택 가능", { n: p.rates.length })}</span>
               <Link href={href} className="text-sm font-semibold text-brand-600 transition group-hover:text-brand-700">
-                {cta} →
+                {tr(cta)} →
               </Link>
             </div>
           </article>
@@ -95,6 +98,7 @@ export type Step = { t: string; d: string; href?: string; cta?: string };
 
 /** 4단계 이용 방법 */
 export function StepsSection({ steps }: { steps: Step[] }) {
+  const tr = getT();
   return (
     <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {steps.map((s, i) => (
@@ -105,7 +109,7 @@ export function StepsSection({ steps }: { steps: Step[] }) {
           <p className="mt-2 text-sm leading-relaxed text-slate-500">{s.d}</p>
           {s.href && (
             <Link href={s.href} className="mt-auto pt-4 text-xs font-semibold text-brand-600 transition group-hover:text-brand-700">
-              {s.cta ?? "바로가기"} →
+              {tr(s.cta ?? "바로가기")} →
             </Link>
           )}
         </li>
@@ -116,6 +120,7 @@ export function StepsSection({ steps }: { steps: Step[] }) {
 
 /** VIP 등급 카드 (myLevel 이 있으면 내 등급 표시) */
 export function VipShowcase({ vips, topVip, myLevel }: { vips: ShowcaseVip[]; topVip: ShowcaseVip | null; myLevel?: number }) {
+  const tr = getT();
   return (
     <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {vips.map((v) => {
@@ -131,13 +136,13 @@ export function VipShowcase({ vips, topVip, myLevel }: { vips: ShowcaseVip[]; to
           >
             {(isMine || (myLevel === undefined && isTop)) && (
               <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-brand-700 to-brand-400 px-2.5 py-0.5 text-[10px] font-bold text-ink-950">
-                {isMine ? "내 등급" : "BEST"}
+                {isMine ? tr("내 등급") : "BEST"}
               </span>
             )}
             <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400">VIP {v.level}</div>
             <div className="mt-1 font-bold text-slate-900">{v.name}</div>
             <div className={`mt-3 text-2xl font-bold ${hi ? "text-gold" : "text-brand-600"}`}>+{pp(v.bonusRate)}</div>
-            <div className="mt-1 text-[11px] text-slate-400">추가 이율</div>
+            <div className="mt-1 text-[11px] text-slate-400">{tr("추가 이율")}</div>
           </div>
         );
       })}

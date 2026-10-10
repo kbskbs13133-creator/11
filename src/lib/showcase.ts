@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { L, type Locale } from "@/lib/i18n";
 
 // 소개/홈 페이지 공용 데이터 (활성 상품 + 기간별 이율 + VIP 등급)
 export type ShowcaseRate = { termDays: number; rate: string; n: number };
@@ -13,7 +14,7 @@ export type ShowcaseData = {
   topVip: ShowcaseVip | null;
 };
 
-export async function loadShowcase(): Promise<ShowcaseData> {
+export async function loadShowcase(locale: Locale = "ko"): Promise<ShowcaseData> {
   const [productsRaw, vipsRaw] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true },
@@ -27,13 +28,13 @@ export async function loadShowcase(): Promise<ShowcaseData> {
     .filter((p) => p.rates.length > 0)
     .map((p) => ({
       id: p.id,
-      name: p.name,
-      description: p.description,
+      name: L(locale, p.name, p.nameEn),
+      description: L(locale, p.description, p.descriptionEn),
       rates: p.rates.map((r) => ({ termDays: r.termDays, rate: r.rate.toString(), n: Number(r.rate.toString()) })),
     }));
   const vips: ShowcaseVip[] = vipsRaw.map((v) => ({
     level: v.level,
-    name: v.name,
+    name: L(locale, v.name, v.nameEn),
     bonusRate: v.bonusRate.toString(),
     n: Number(v.bonusRate.toString()),
   }));

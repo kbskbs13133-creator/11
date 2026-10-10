@@ -9,7 +9,7 @@ export default async function AdminDepositsPage({ searchParams }: { searchParams
   const q = searchParams.q?.trim() ?? "";
   const where: Prisma.DepositWhereInput = {
     ...(status ? { status } : {}),
-    ...(q ? { OR: [{ user: { email: { contains: q, mode: "insensitive" } } }, { user: { name: { contains: q, mode: "insensitive" } } }, { productName: { contains: q, mode: "insensitive" } }] } : {}),
+    ...(q ? { OR: [{ user: { email: { contains: q, mode: "insensitive" } } }, { user: { name: { contains: q, mode: "insensitive" } } }, { productName: { contains: q, mode: "insensitive" } }, { productNameEn: { contains: q, mode: "insensitive" } }] } : {}),
   };
   const [deposits, totals] = await Promise.all([
     prisma.deposit.findMany({ where, include: { user: { select: { name: true, email: true } } }, orderBy: { createdAt: "desc" }, take: 500 }),

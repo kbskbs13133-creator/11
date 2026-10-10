@@ -4,8 +4,9 @@ import { getBalanceSummary } from "@/lib/balance";
 import { productDTO } from "@/lib/serializers";
 import { s2, sRate } from "@/lib/money";
 import ProductList from "./ProductList";
+import { pageTitle } from "@/lib/i18n/server";
 
-export const metadata = { title: "상품 | 포인트 예치 플랫폼" };
+export const generateMetadata = pageTitle("상품");
 
 export default async function ProductsPage() {
   const me = await requireUserPage();
@@ -22,7 +23,7 @@ export default async function ProductsPage() {
     <ProductList
       products={products.filter((p) => p.rates.length > 0).map(productDTO)}
       available={s2(summary.available)!}
-      vip={{ level: summary.user.vipLevel, name: summary.user.vip.name, bonusRate: sRate(summary.user.vip.bonusRate) }}
+      vip={{ level: summary.user.vipLevel, name: summary.user.vip.name, nameEn: summary.user.vip.nameEn, bonusRate: sRate(summary.user.vip.bonusRate) }}
     />
   );
 }

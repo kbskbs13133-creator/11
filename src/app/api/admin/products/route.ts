@@ -32,7 +32,9 @@ export const POST = handler(async (req: Request) => {
     return tx.product.create({
       data: {
         name: body.name,
+        nameEn: body.nameEn,
         description: body.description,
+        descriptionEn: body.descriptionEn,
         isActive: body.isActive,
         sortOrder: body.sortOrder,
         rates: { create: body.rates.map((r) => ({ termDays: r.termDays, rate: toDec(r.rate) })) },

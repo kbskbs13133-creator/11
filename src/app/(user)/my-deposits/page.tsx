@@ -2,8 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { requireUserPage } from "@/lib/session";
 import { depositDTO } from "@/lib/serializers";
 import MyDeposits from "./MyDeposits";
+import { pageTitle } from "@/lib/i18n/server";
 
-export const metadata = { title: "내 예치 | 포인트 예치 플랫폼" };
+export const generateMetadata = pageTitle("내 예치");
 
 export default async function MyDepositsPage() {
   const me = await requireUserPage();

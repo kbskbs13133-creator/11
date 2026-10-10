@@ -3,6 +3,8 @@ import { requireUserPage } from "@/lib/session";
 import { TopNav, BottomNav, type NavItem } from "@/components/NavLinks";
 import SignOutButton from "@/components/SignOutButton";
 import Logo from "@/components/Logo";
+import LangToggle from "@/components/LangToggle";
+import { getT } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,7 @@ const items: NavItem[] = [
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUserPage();
+  const tr = getT();
   return (
     <div className="min-h-screen overflow-x-clip pb-20 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-ink-950/75 backdrop-blur-xl">
@@ -25,8 +28,9 @@ export default async function UserLayout({ children }: { children: React.ReactNo
             <Logo />
           </Link>
           <TopNav items={items} />
-          <div className="flex items-center gap-3">
-            <span className="hidden max-w-[120px] truncate text-sm text-slate-600 sm:inline">{user.name}님</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <LangToggle />
+            <span className="hidden max-w-[120px] truncate text-sm text-slate-600 lg:inline">{tr("{name}님", { name: user.name })}</span>
             <SignOutButton />
           </div>
         </div>

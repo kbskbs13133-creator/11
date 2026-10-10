@@ -4,7 +4,9 @@ import { s2, sRate } from "./money";
 export type ProductDTO = {
   id: string;
   name: string;
+  nameEn: string;
   description: string;
+  descriptionEn: string;
   isActive: boolean;
   sortOrder: number;
   rates: { id: string; termDays: number; rate: string }[];
@@ -15,7 +17,9 @@ export function productDTO(p: Product & { rates: ProductRate[]; _count?: { depos
   return {
     id: p.id,
     name: p.name,
+    nameEn: p.nameEn,
     description: p.description,
+    descriptionEn: p.descriptionEn,
     isActive: p.isActive,
     sortOrder: p.sortOrder,
     rates: [...p.rates].sort((a, b) => a.termDays - b.termDays).map((r) => ({ id: r.id, termDays: r.termDays, rate: sRate(r.rate) })),
@@ -29,6 +33,7 @@ export function depositDTO(d: Deposit) {
     id: d.id,
     productId: d.productId,
     productName: d.productName,
+    productNameEn: d.productNameEn,
     principal: s2(d.principal)!,
     termDays: d.termDays,
     baseRate: sRate(d.baseRate),
@@ -62,5 +67,5 @@ export function transactionDTO(t: PointTransaction) {
   };
 }
 
-export type VipLevelDTO = { level: number; name: string; bonusRate: string };
-export const vipDTO = (v: VipLevel): VipLevelDTO => ({ level: v.level, name: v.name, bonusRate: sRate(v.bonusRate) });
+export type VipLevelDTO = { level: number; name: string; nameEn: string; bonusRate: string };
+export const vipDTO = (v: VipLevel): VipLevelDTO => ({ level: v.level, name: v.name, nameEn: v.nameEn, bonusRate: sRate(v.bonusRate) });

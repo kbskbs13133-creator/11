@@ -1,5 +1,7 @@
+"use client";
 import { formatAmount, formatRate, termLabel } from "@/lib/format";
 import { centsToString, dailyInterestCents, expectedInterestCents, rate4ToString, toRate4 } from "@/lib/clientMath";
+import { useT } from "@/components/LocaleProvider";
 
 type Rate = { termDays: number; rate: string };
 
@@ -17,17 +19,18 @@ export default function RateTable({
   vipBonus?: string;
   exampleAmount?: number;
 }) {
+  const tr = useT();
   const showVip = vipBonus !== undefined && Number(vipBonus) > 0;
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200">
       <table className="min-w-full whitespace-nowrap text-sm">
         <thead className="bg-slate-50 text-xs text-slate-500">
           <tr>
-            <th className="px-3 py-2 text-left font-semibold">기간</th>
-            <th className="px-3 py-2 text-right font-semibold">기간 이율</th>
-            {showVip && <th className="px-3 py-2 text-right font-semibold">내 적용 이율</th>}
-            <th className="px-3 py-2 text-right font-semibold">{formatAmount(String(exampleAmount))} 예치 시 만기 이자</th>
-            <th className="px-3 py-2 text-right font-semibold">일 이자</th>
+            <th className="px-3 py-2 text-left font-semibold">{tr("기간")}</th>
+            <th className="px-3 py-2 text-right font-semibold">{tr("기간 이율")}</th>
+            {showVip && <th className="px-3 py-2 text-right font-semibold">{tr("내 적용 이율")}</th>}
+            <th className="px-3 py-2 text-right font-semibold">{tr("{amount} 예치 시 만기 이자", { amount: formatAmount(String(exampleAmount)) })}</th>
+            <th className="px-3 py-2 text-right font-semibold">{tr("일 이자")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -39,7 +42,7 @@ export default function RateTable({
             return (
               <tr key={r.termDays}>
                 <td className="px-3 py-2 font-medium">
-                  {termLabel(r.termDays)} <span className="text-xs text-slate-400">({r.termDays}일)</span>
+                  {termLabel(r.termDays, tr.locale)} <span className="text-xs text-slate-400">({tr("{n}일", { n: r.termDays })})</span>
                 </td>
                 <td className="px-3 py-2 text-right">{formatRate(r.rate)}</td>
                 {showVip && (

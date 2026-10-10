@@ -50,6 +50,7 @@ export const POST = handler(async (req: Request) => {
         userId: me.id,
         productId: product.id,
         productName: product.name,
+        productNameEn: product.nameEn,
         principal,
         termDays: body.termDays,
         baseRate: rate.rate,

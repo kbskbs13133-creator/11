@@ -14,7 +14,7 @@ async function main() {
     const user = await tx.user.create({
       data: {
         email: "user@example.com",
-        name: "데모회원",
+        name: "Demo User",
         passwordHash: await bcrypt.hash("user1234!", 10),
         vipLevel: 2,
         pointBalance: new Prisma.Decimal("1000000"),
@@ -23,11 +23,11 @@ async function main() {
     await tx.pointTransaction.create({
       data: {
         userId: user.id, type: "ADMIN_CHARGE", amount: new Prisma.Decimal("1000000"), status: "APPROVED",
-        memo: "가입 축하 포인트", processedById: admin.id, processedAt: new Date(), balanceAfter: new Prisma.Decimal("1000000"),
+        memo: "Welcome bonus", processedById: admin.id, processedAt: new Date(), balanceAfter: new Prisma.Decimal("1000000"),
       },
     });
     await tx.pointTransaction.create({
-      data: { userId: user.id, type: "CHARGE", amount: new Prisma.Decimal("50000"), status: "PENDING", memo: "데모회원 입금" },
+      data: { userId: user.id, type: "CHARGE", amount: new Prisma.Decimal("50000"), status: "PENDING", memo: "Demo deposit" },
     });
   });
   console.log("✅ 데모 회원 생성: user@example.com / user1234!");

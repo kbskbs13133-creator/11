@@ -23,7 +23,9 @@ export const PUT = handler(async (req: Request, { params }: Ctx) => {
       where: { id: params.id },
       data: {
         name: body.name,
+        nameEn: body.nameEn,
         description: body.description,
+        descriptionEn: body.descriptionEn,
         isActive: body.isActive,
         sortOrder: body.sortOrder,
         rates: { create: body.rates.map((r) => ({ termDays: r.termDays, rate: toDec(r.rate) })) },

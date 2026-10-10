@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "./LocaleProvider";
 import { toCents } from "@/lib/clientMath";
 
 /** 입력값에서 숫자/소수점만 남기고 소수 2자리로 제한 → "1234567.5" 같은 원본 문자열 */
@@ -33,6 +34,28 @@ export function koreanAmount(raw: string): string {
   return parts.join(" ") || "0";
 }
 
+/** "123456789" → "123.46 million" (영문 읽기 보조) */
+export function englishAmount(raw: string): string {
+  const c = toCents(raw || "");
+  if (c === null || c === 0n) return "";
+  const n = c / 100n;
+  const units: [bigint, string][] = [
+    [1_000_000_000_000n, "trillion"],
+    [1_000_000_000n, "billion"],
+    [1_000_000n, "million"],
+    [1_000n, "thousand"],
+  ];
+  for (const [base, word] of units) {
+    if (n >= base) {
+      const hundredths = (n * 100n) / base;
+      const whole = hundredths / 100n;
+      const frac = (hundredths % 100n).toString().padStart(2, "0").replace(/0+$/, "");
+      return `${whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${frac ? "." + frac : ""} ${word}`;
+    }
+  }
+  return n.toString();
+}
+
 /** 천 단위 콤마가 자동으로 찍히는 포인트 금액 입력칸. value/onChange 는 콤마 없는 원본 문자열 */
 export default function AmountInput({
   id,
@@ -45,7 +68,8 @@ export default function AmountInput({
   onChange: (raw: string) => void;
   autoFocus?: boolean;
 }) {
-  const kor = koreanAmount(value);
+  const tr = useT();
+  const kor = tr.locale === "en" ? englishAmount(value) : koreanAmount(value);
   return (
     <div>
       <div className="relative">
@@ -61,7 +85,7 @@ export default function AmountInput({
         />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-brand-500">P</span>
       </div>
-      <p className="mt-1 h-4 text-right text-xs text-slate-400">{kor && `${kor} 포인트`}</p>
+      <p className="mt-1 h-4 text-right text-xs text-slate-400">{kor && `${kor} ${tr("포인트")}`}</p>
     </div>
   );
 }
