@@ -12,6 +12,7 @@ const items: NavItem[] = [
   { href: "/products", label: "상품", icon: "chart" },
   { href: "/my-deposits", label: "내 예치", icon: "coins" },
   { href: "/wallet", label: "지갑", icon: "wallet" },
+  { href: "/yield", label: "수익 구조", icon: "layers" },
 ];
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {

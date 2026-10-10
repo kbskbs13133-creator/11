@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BRAND } from "@/lib/brand";
 import { formatRate, termLabel } from "@/lib/format";
 import { loadShowcase } from "@/lib/showcase";
-import Logo from "@/components/Logo";
+import { PublicFooter, PublicHeader } from "@/components/PublicChrome";
 import { ProductShowcase, RateTicker, SectionTitle, StepsSection, VipShowcase, pp } from "@/components/Showcase";
 
 // 로그인한 사용자는 미들웨어에서 역할별 홈으로 이동하고, 비로그인 방문자에게만 이 소개 페이지가 보입니다.
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: `${BRAND.title} | 맡겨둔 포인트가 매일 이자로`,
-  description: "기간별 확정 수익률 상품에 포인트를 예치하고 매일 자정 이자를 받으세요.",
+  description: "기간별 이율이 적용되는 포인트 예치 상품. 이자는 매일 자정 정산됩니다.",
 };
 
 export default async function LandingPage() {
@@ -19,21 +19,7 @@ export default async function LandingPage() {
 
   return (
     <div className="relative overflow-x-clip">
-      {/* ───────── 헤더 ───────── */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link href="/" aria-label="홈"><Logo /></Link>
-          <nav className="hidden items-center gap-7 text-sm text-slate-500 md:flex">
-            <a href="#products" className="transition hover:text-brand-600">상품</a>
-            <a href="#how" className="transition hover:text-brand-600">이용 방법</a>
-            <a href="#vip" className="transition hover:text-brand-600">VIP 혜택</a>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/login" className="btn-secondary btn-sm !rounded-full !px-4">로그인</Link>
-            <Link href="/signup" className="btn-primary btn-sm !rounded-full !px-4">시작하기</Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* ───────── 히어로 ───────── */}
       <section className="relative">
@@ -53,8 +39,9 @@ export default async function LandingPage() {
               <span className="text-gold">매일 이자</span>로 깨우세요
             </h1>
             <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-slate-500">
-              원하는 기간을 고르면 수익률이 <b className="font-semibold text-slate-800">예치 순간 확정</b>됩니다.
-              이자는 하루도 빠짐없이 지급되고, 만기일에는 <b className="font-semibold text-slate-800">원금이 자동으로 반환</b>됩니다.
+              원하는 기간을 고르면 <b className="font-semibold text-slate-800">예치 시점의 이율</b>이 만기까지 적용됩니다.
+              이자는 매일 자정 정산되고, 만기일에는 <b className="font-semibold text-slate-800">원금이 자동으로 정산</b>됩니다.{" "}
+              <Link href="/strategy" className="whitespace-nowrap font-semibold text-brand-600 hover:underline">수익은 어디서 오나요? →</Link>
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/signup" className="btn-primary !rounded-full !px-6 !py-3">
@@ -68,8 +55,8 @@ export default async function LandingPage() {
                 일 단위 이자 지급
               </li>
               <li>
-                <div className="text-lg font-bold text-slate-900">100%</div>
-                만기 원금 자동 반환
+                <div className="text-lg font-bold text-slate-900">자동</div>
+                만기 원금 정산
               </li>
               <li>
                 <div className="text-lg font-bold text-slate-900">+{pp(topVip?.bonusRate ?? "0")}</div>
@@ -114,7 +101,7 @@ export default async function LandingPage() {
                   <span className="h-9 w-12 rounded-md border border-brand-300/50 bg-gradient-to-br from-brand-700/80 via-brand-400/60 to-brand-300/40 shadow-inner" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">기간 확정 수익률</p>
+                  <p className="text-xs text-slate-500">기간 적용 이율</p>
                   <p className="mt-1 text-6xl font-bold tracking-tight text-gold sm:text-7xl">
                     {best ? formatRate(best.rate) : "-"}
                   </p>
@@ -160,7 +147,7 @@ export default async function LandingPage() {
 
       {/* ───────── 상품 ───────── */}
       <section id="products" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-        <SectionTitle eyebrow="PRODUCTS" title="기간을 고르면," gold="수익률이 확정" tail="됩니다" desc="표시된 이율은 해당 기간 전체의 총 수익률이며, 매일 균등하게 나누어 지급됩니다." />
+        <SectionTitle eyebrow="PRODUCTS" title="기간을 고르면," gold="이율이 적용" tail="됩니다" desc="표시된 이율은 해당 기간 전체 기준이며 매일 나누어 정산됩니다. 운용 전략에는 위험이 따르므로 수익 구조와 위험 고지를 꼭 확인하세요." />
         <ProductShowcase products={products} maxRate={maxRate} href="/signup" />
       </section>
 
@@ -171,8 +158,8 @@ export default async function LandingPage() {
           steps={[
             { t: "회원가입", d: "이메일과 비밀번호만으로 1분 안에 계정을 만듭니다." },
             { t: "포인트 충전", d: "충전을 신청하면 관리자 확인 후 즉시 반영됩니다." },
-            { t: "상품 예치", d: "원하는 상품과 기간을 고르는 순간 수익률이 확정됩니다." },
-            { t: "매일 이자 · 만기 반환", d: "매일 자정 이자가 쌓이고, 만기일에 원금이 돌아옵니다." },
+            { t: "상품 예치", d: "원하는 상품과 기간을 고르면 그 시점의 이율이 만기까지 적용됩니다." },
+            { t: "매일 이자 · 만기 정산", d: "매일 자정 이자가 정산되고, 만기일에 원금이 정산됩니다." },
           ]}
         />
       </section>
@@ -180,7 +167,7 @@ export default async function LandingPage() {
       {/* ───────── VIP ───────── */}
       {vips.length > 0 && (
         <section id="vip" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-          <SectionTitle eyebrow="VIP MEMBERSHIP" title="등급이 높을수록," gold="이율도 높아집니다" desc="VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급으로 확정됩니다." />
+          <SectionTitle eyebrow="VIP MEMBERSHIP" title="등급이 높을수록," gold="이율도 높아집니다" desc="VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급 기준으로 적용됩니다." />
           <VipShowcase vips={vips} topVip={topVip} />
         </section>
       )}
@@ -203,17 +190,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ───────── 푸터 ───────── */}
-      <footer className="border-t border-white/[0.06]">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 text-xs text-slate-400 md:flex-row md:items-start md:justify-between">
-          <Logo />
-          <p className="max-w-xl leading-relaxed">
-            표시된 수익률은 상품별 기간 전체에 대한 총 수익률이며 이자는 매일 균등 분할 지급됩니다.
-            VIP 추가 이율은 예치 시점의 등급 기준으로 확정됩니다. 상품 구성 및 이율은 운영 정책에 따라 변경될 수 있습니다.
-          </p>
-          <p className="shrink-0">© {new Date().getFullYear()} {BRAND.title}</p>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default async function UserHomePage() {
             )}
           </h1>
           <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-slate-500">
-            기간을 고르는 순간 수익률이 <b className="font-semibold text-slate-800">확정</b>되고, 매일 자정 이자가 쌓입니다.
+            기간을 고르면 <b className="font-semibold text-slate-800">예치 시점의 이율</b>이 만기까지 적용되고, 매일 자정 이자가 정산됩니다.
             {Number(myBonus) > 0 && (
               <>
                 {" "}현재 등급 혜택으로 모든 상품에 <b className="font-semibold text-brand-700">+{pp(myBonus)}</b>가 더해집니다.
@@ -126,9 +126,36 @@ export default async function UserHomePage() {
         </div>
       </section>
 
+      {/* ───────── 수익 구조 안내 ───────── */}
+      <section>
+        <Link
+          href="/yield"
+          className="group relative block overflow-hidden rounded-3xl border border-sky-400/20 bg-gradient-to-br from-sky-500/[0.10] via-ink-900/80 to-brand-50/40 p-6 transition hover:border-sky-300/40 sm:p-8"
+        >
+          <div aria-hidden className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-sky-500/10 blur-3xl" />
+          <div className="relative grid items-center gap-6 md:grid-cols-[1.3fr_1fr]">
+            <div>
+              <p className="text-[11px] font-semibold tracking-[0.28em] text-cyan-300">HOW YIELD IS GENERATED</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">이자는 어떻게 만들어지나요?</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                DeFi 수익은 취하고, 가격 위험은 무기한 선물로 상쇄하는 <b className="text-slate-700">델타 뉴트럴 전략</b>의 구조와 위험 요소를 확인해 보세요.
+              </p>
+              <span className="mt-4 inline-block text-sm font-semibold text-cyan-300 transition group-hover:translate-x-1">수익 구조 자세히 보기 →</span>
+            </div>
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2 text-center text-[11px]">
+              <div className="rounded-xl border border-cyan-300/25 bg-ink-900/70 px-2 py-3"><div className="font-semibold text-cyan-300">LONG</div><div className="mt-0.5 text-slate-500">DeFi</div></div>
+              <span className="text-slate-400">+</span>
+              <div className="rounded-xl border border-sky-400/25 bg-ink-900/70 px-2 py-3"><div className="font-semibold text-sky-300">SHORT</div><div className="mt-0.5 text-slate-500">Perp</div></div>
+              <span className="text-slate-400">=</span>
+              <div className="rounded-xl border border-brand-400/35 bg-brand-50/50 px-2 py-3"><div className="font-semibold text-brand-600">YIELD</div><div className="mt-0.5 text-slate-500">Δ≈0</div></div>
+            </div>
+          </div>
+        </Link>
+      </section>
+
       {/* ───────── 상품 ───────── */}
       <section>
-        <SectionTitle eyebrow="PRODUCTS" title="지금 가입 가능한" gold="확정 수익 상품" desc={Number(myBonus) > 0 ? `표시된 기본 이율에 회원님의 VIP 추가 이율 +${pp(myBonus)}가 더해집니다.` : "표시된 이율은 해당 기간 전체의 총 수익률이며, 매일 균등하게 나누어 지급됩니다."} />
+        <SectionTitle eyebrow="PRODUCTS" title="지금 가입 가능한" gold="예치 상품" desc={Number(myBonus) > 0 ? `표시된 기본 이율에 회원님의 VIP 추가 이율 +${pp(myBonus)}가 더해집니다.` : "표시된 이율은 해당 기간 전체 기준이며, 매일 나누어 정산됩니다."} />
         <ProductShowcase products={products} maxRate={maxRate} href="/products" />
       </section>
 
@@ -138,9 +165,9 @@ export default async function UserHomePage() {
         <StepsSection
           steps={[
             { t: "포인트 충전", d: "지갑에서 충전을 신청하면 관리자 확인 후 바로 반영됩니다.", href: "/wallet", cta: "충전하러 가기" },
-            { t: "상품 · 기간 선택", d: "원하는 상품과 기간을 고르는 순간 수익률이 확정됩니다.", href: "/products", cta: "상품 보러 가기" },
+            { t: "상품 · 기간 선택", d: "원하는 상품과 기간을 고르면 그 시점의 이율이 만기까지 적용됩니다.", href: "/products", cta: "상품 보러 가기" },
             { t: "매일 이자 적립", d: "매일 자정, 하루치 이자가 보유 포인트에 자동으로 더해집니다.", href: "/dashboard", cta: "이자 내역 보기" },
-            { t: "만기 원금 반환", d: "만기일이 되면 원금이 자동으로 돌아오고 예치가 완료됩니다.", href: "/my-deposits", cta: "내 예치 보기" },
+            { t: "만기 원금 정산", d: "만기일이 되면 원금이 자동으로 정산되고 예치가 완료됩니다.", href: "/my-deposits", cta: "내 예치 보기" },
           ]}
         />
       </section>
@@ -148,7 +175,7 @@ export default async function UserHomePage() {
       {/* ───────── VIP ───────── */}
       {vips.length > 0 && (
         <section>
-          <SectionTitle eyebrow="VIP MEMBERSHIP" title="회원님의 등급은" gold={`VIP ${user.vipLevel} · ${user.vip.name}`} tail="입니다" desc="VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급으로 확정됩니다." />
+          <SectionTitle eyebrow="VIP MEMBERSHIP" title="회원님의 등급은" gold={`VIP ${user.vipLevel} · ${user.vip.name}`} tail="입니다" desc="VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급 기준으로 적용됩니다." />
           <VipShowcase vips={vips} topVip={topVip} myLevel={user.vipLevel} />
         </section>
       )}

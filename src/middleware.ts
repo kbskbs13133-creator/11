@@ -9,7 +9,7 @@ import { getToken, type JWT } from "next-auth/jwt";
  *  - /api/cron/**                     : 미들웨어 제외 (CRON_SECRET 으로 핸들러에서 검증)
  */
 
-const USER_PAGES = ["/home", "/dashboard", "/products", "/wallet", "/my-deposits"];
+const USER_PAGES = ["/home", "/yield", "/dashboard", "/products", "/wallet", "/my-deposits"];
 const USER_APIS = ["/api/deposits", "/api/transactions", "/api/me"];
 const AUTH_PAGES = ["/login", "/signup"];
 
@@ -60,6 +60,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // 공개 수익 구조 페이지: 로그인한 회원은 회원용 페이지로
+  if (pathname === "/strategy") {
+    if (token && role === "USER") return NextResponse.redirect(new URL("/yield", req.url));
+    return NextResponse.next();
+  }
+
   // 관리자 영역
   if (startsWithAny(pathname, ["/admin", "/api/admin"])) {
     if (!token) return deny(401);
@@ -83,6 +89,8 @@ export const config = {
     "/login",
     "/signup",
     "/home/:path*",
+    "/yield/:path*",
+    "/strategy",
     "/dashboard/:path*",
     "/products/:path*",
     "/wallet/:path*",

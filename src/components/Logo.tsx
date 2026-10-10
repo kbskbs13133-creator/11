@@ -24,7 +24,7 @@ export default function Logo({ letter = "P", sub = BRAND.tagline, name = BRAND.n
       <LogoMark letter={letter} />
       <span className="flex flex-col leading-none">
         <span className="text-[15px] font-bold tracking-tight text-slate-900">{name}</span>
-        <span className="mt-1 text-[9px] font-semibold tracking-[0.28em] text-brand-500">{sub}</span>
+        <span className="mt-1 hidden whitespace-nowrap text-[9px] font-semibold tracking-[0.28em] text-brand-500 min-[400px]:block">{sub}</span>
       </span>
     </span>
   );
