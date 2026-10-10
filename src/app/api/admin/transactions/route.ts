@@ -14,7 +14,7 @@ export const GET = handler(async (req: Request) => {
   const type = url.searchParams.get("type") as TransactionType | null;
   const where: Prisma.PointTransactionWhereInput = {};
   if (status && ["PENDING", "APPROVED", "REJECTED"].includes(status)) where.status = status;
-  if (type && ["CHARGE", "WITHDRAW", "ADMIN_CHARGE"].includes(type)) where.type = type;
+  if (type && ["CHARGE", "WITHDRAW", "ADMIN_CHARGE", "CRYPTO_DEPOSIT"].includes(type)) where.type = type;
 
   const list = await prisma.pointTransaction.findMany({
     where,

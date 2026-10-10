@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runDailyBatch } from "@/lib/batch";
+import { scanDue } from "@/lib/crypto/scan";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -16,7 +17,9 @@ export async function GET(req: Request) {
   }
   try {
     const result = await runDailyBatch({ trigger: "CRON" });
-    return NextResponse.json(result);
+    // 안전장치: 하루 1번 전체 회원 코인 입금 주소도 확인 (외부 1분 cron 누락 대비)
+    const crypto = await scanDue({ all: true, budgetMs: 20_000 }).catch((e) => ({ error: (e as Error).message }));
+    return NextResponse.json({ ...result, crypto });
   } catch (e) {
     console.error("[cron] daily-interest 실패", e);
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });

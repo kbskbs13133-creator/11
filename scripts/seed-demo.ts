@@ -27,7 +27,7 @@ async function main() {
       },
     });
     await tx.pointTransaction.create({
-      data: { userId: user.id, type: "CHARGE", amount: new Prisma.Decimal("50000"), status: "PENDING", memo: "Demo deposit" },
+      data: { userId: user.id, type: "WITHDRAW", amount: new Prisma.Decimal("5000"), status: "PENDING", memo: "Demo withdrawal", cryptoAsset: "USDT_TRC20", cryptoAddress: "TUEZSdKsoDHQMeZwihtdoBiN46zxhGWYdH" },
     });
   });
   console.log("✅ 데모 회원 생성: user@example.com / user1234!");

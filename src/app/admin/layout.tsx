@@ -13,6 +13,7 @@ const items: NavItem[] = [
   { href: "/admin", label: "개요", icon: "grid" },
   { href: "/admin/users", label: "회원@nav", icon: "users" },
   { href: "/admin/transactions", label: "신청@nav", icon: "inbox" },
+  { href: "/admin/crypto", label: "코인 입금@nav", icon: "receive" },
   { href: "/admin/products", label: "상품", icon: "box" },
   { href: "/admin/deposits", label: "예치", icon: "coins" },
   { href: "/admin/vip-levels", label: "VIP", icon: "star" },

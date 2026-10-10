@@ -1,4 +1,5 @@
 "use client";
+import { ASSETS, type CryptoAssetId } from "@/lib/crypto/config";
 import { useCallback, useEffect, useState } from "react";
 import Modal from "@/components/Modal";
 import { api } from "@/lib/client";
@@ -21,6 +22,7 @@ const TYPE_TABS = [
   { key: "CHARGE", label: "충전 신청" },
   { key: "WITHDRAW", label: "환전 신청" },
   { key: "ADMIN_CHARGE", label: "관리자 충전" },
+  { key: "CRYPTO_DEPOSIT", label: "코인 입금" },
 ];
 
 export default function TransactionAdmin() {
@@ -116,7 +118,7 @@ export default function TransactionAdmin() {
               <th>{tr("유형")}</th>
               <th className="!text-right">{tr("금액")}</th>
               <th className="!text-right">{tr("회원 현재 잔액")}</th>
-              <th>{tr("메모")}</th>
+              <th className="w-[176px] !whitespace-normal">{tr("받을 주소 / 메모")}</th>
               <th>{tr("상태")}</th>
               <th className="!text-right">{tr("처리@action")}</th>
             </tr>
@@ -132,11 +134,27 @@ export default function TransactionAdmin() {
                   <div className="text-xs text-slate-500">{r.user.email}</div>
                 </td>
                 <td><TxTypeBadge type={r.type} /></td>
-                <td className={`text-right font-semibold ${r.type === "WITHDRAW" ? "text-violet-700" : "text-blue-700"}`}>
+                <td className={`text-right font-semibold ${r.type === "WITHDRAW" ? "text-violet-700" : r.type === "CRYPTO_DEPOSIT" ? "text-emerald-600" : "text-blue-700"}`}>
                   {r.type === "WITHDRAW" ? "-" : "+"}{formatAmount(r.amount)}
                 </td>
                 <td className="text-right text-slate-600">{formatAmount(r.user.balance)}</td>
-                <td className="max-w-[200px] truncate text-xs text-slate-500" title={r.memo ?? ""}>{r.memo ? tr(r.memo) : "-"}</td>
+                <td className="w-[176px] min-w-[176px] max-w-[176px] !whitespace-normal text-xs text-slate-500">
+                  {r.cryptoAsset && r.cryptoAddress && (
+                    <div className="mb-1">
+                      <span className="font-semibold text-slate-700">{ASSETS[r.cryptoAsset as CryptoAssetId].symbol}</span>{" "}
+                      <span className="text-slate-400">{ASSETS[r.cryptoAsset as CryptoAssetId].network}</span>
+                      <button
+                        type="button"
+                        className="mt-0.5 block w-full break-all text-left font-mono text-[11px] text-slate-700 hover:text-brand-600"
+                        title={tr("주소 복사")}
+                        onClick={() => navigator.clipboard?.writeText(r.cryptoAddress!).then(() => toast(tr("주소가 복사되었습니다."), "success"))}
+                      >
+                        {r.cryptoAddress}
+                      </button>
+                    </div>
+                  )}
+                  <div className="truncate" title={r.memo ?? ""}>{r.memo ? tr(r.memo) : r.cryptoAddress ? "" : "-"}</div>
+                </td>
                 <td>
                   <TxStatusBadge status={r.status} />
                   {r.status === "REJECTED" && r.rejectReason && <div className="mt-1 max-w-[180px] truncate text-xs text-rose-500" title={r.rejectReason}>{r.rejectReason}</div>}

@@ -27,12 +27,32 @@ enum TransactionType {
   CHARGE // 유저 충전 신청
   WITHDRAW // 유저 환전(출금) 신청
   ADMIN_CHARGE // 관리자 직접 충전 (즉시 APPROVED)
+  CRYPTO_DEPOSIT // 코인 입금 자동 충전 (즉시 APPROVED)
 }
 
 enum TransactionStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum CryptoChain {
+  BTC
+  ETH // ETH · USDT-ERC20 공용 주소
+  TRON // USDT-TRC20
+}
+
+enum CryptoAsset {
+  BTC
+  ETH
+  USDT_ERC20
+  USDT_TRC20
+}
+
+enum CryptoDepositStatus {
+  PENDING // 감지됨, 컨펌 대기
+  CREDITED // 포인트 반영 완료
+  BELOW_MIN // 최소 입금액 미만 (관리자 수동 반영 가능)
 }
 
 enum BatchTrigger {
@@ -64,6 +84,8 @@ model User {
   interestLogs          InterestLog[]
   transactions          PointTransaction[] @relation("TransactionUser")
   processedTransactions PointTransaction[] @relation("TransactionProcessor")
+  cryptoWallet          CryptoWallet?
+  cryptoDeposits        CryptoDeposit[]
 
   @@index([role])
 }
@@ -167,11 +189,14 @@ model PointTransaction {
   processedById String?
   processedAt   DateTime?
   balanceAfter  Decimal?          @db.Decimal(18, 2) // 승인 처리 후 잔액
+  cryptoAsset   CryptoAsset? // 환전: 받을 코인/네트워크
+  cryptoAddress String? // 환전: 받을 지갑 주소
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  user        User  @relation("TransactionUser", fields: [userId], references: [id])
-  processedBy User? @relation("TransactionProcessor", fields: [processedById], references: [id])
+  user          User           @relation("TransactionUser", fields: [userId], references: [id])
+  processedBy   User?          @relation("TransactionProcessor", fields: [processedById], references: [id])
+  cryptoDeposit CryptoDeposit?
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
@@ -192,4 +217,58 @@ model BatchRun {
   finishedAt     DateTime?
 
   interestLogs InterestLog[]
+}
+
+/// 회원별 HD 지갑 (id = HD 파생 인덱스, 0번은 회사 메인 주소로 예약 → 1부터 시작)
+model CryptoWallet {
+  id            Int       @id @default(autoincrement())
+  userId        String    @unique
+  watchUntil    DateTime? // 이 시각까지 1분 주기 자동 스캔 대상
+  lastScannedAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  user      User            @relation(fields: [userId], references: [id])
+  addresses CryptoAddress[]
+
+  @@index([watchUntil])
+}
+
+model CryptoAddress {
+  id        String      @id @default(cuid())
+  walletId  Int
+  userId    String
+  chain     CryptoChain
+  address   String      @unique
+  createdAt DateTime    @default(now())
+
+  wallet   CryptoWallet    @relation(fields: [walletId], references: [id])
+  deposits CryptoDeposit[]
+
+  @@unique([walletId, chain])
+}
+
+model CryptoDeposit {
+  id            String              @id @default(cuid())
+  userId        String
+  addressId     String
+  asset         CryptoAsset
+  txHash        String
+  uniqueKey     String              @unique // 체인별 고유키 (중복 반영 방지)
+  fromAddress   String?
+  amount        Decimal             @db.Decimal(36, 18) // 코인 수량
+  confirmations Int                 @default(0)
+  status        CryptoDepositStatus @default(PENDING)
+  priceUsd      Decimal?            @db.Decimal(24, 8) // 반영 시점 시세 (USD)
+  points        Decimal?            @db.Decimal(18, 2) // 지급 포인트 (1 USD = 1 P)
+  transactionId String?             @unique
+  blockTime     DateTime?
+  detectedAt    DateTime            @default(now())
+  creditedAt    DateTime?
+
+  user        User              @relation(fields: [userId], references: [id])
+  address     CryptoAddress     @relation(fields: [addressId], references: [id])
+  transaction PointTransaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([status, detectedAt])
+  @@index([userId, detectedAt])
 }

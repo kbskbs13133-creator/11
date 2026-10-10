@@ -17,3 +17,9 @@ export function s2(d: DecimalT | null | undefined): string | null {
   return d == null ? null : d.toFixed(2);
 }
 export const sRate = (d: DecimalT) => d.toDecimalPlaces(4).toString();
+
+/** 코인 수량 등 고정밀 Decimal → 지수표기 없는 문자열 (끝자리 0 제거) */
+export const sPlain = (d: DecimalT, dp = 18) => {
+  const f = d.toFixed(dp);
+  return f.includes(".") ? f.replace(/\.?0+$/, "") : f;
+};

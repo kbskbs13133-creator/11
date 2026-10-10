@@ -31,6 +31,7 @@ export function TxTypeBadge({ type }: { type: string }) {
   const tr = useT();
   if (type === "CHARGE") return <Badge tone="blue">{tr("충전 신청")}</Badge>;
   if (type === "WITHDRAW") return <Badge tone="purple">{tr("환전 신청")}</Badge>;
+  if (type === "CRYPTO_DEPOSIT") return <Badge tone="green">{tr("코인 입금")}</Badge>;
   return <Badge tone="gray">{tr("관리자 충전")}</Badge>;
 }
 

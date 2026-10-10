@@ -6,6 +6,8 @@
  * ⚠️ 미래 날짜 기준 배치를 실행하므로 테스트 후에는 `npm run db:reset` 으로 초기화하는 것을 권장합니다.
  */
 import { PrismaClient, Prisma } from "@prisma/client";
+import { writeFileSync } from "node:fs";
+import { deriveAddress } from "../src/lib/crypto/hd";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const prisma = new PrismaClient();
@@ -165,13 +167,17 @@ async function main() {
 
   // ───────────────────────────────────────────────
   section("4. 포인트: 관리자 직접 충전 / 충전·환전 신청 + 승인·거절");
+  const W = { cryptoAsset: "USDT_TRC20", cryptoAddress: "TUEZSdKsoDHQMeZwihtdoBiN46zxhGWYdH" }; // 환전 받을 주소
   const ch = await admin.json(`/api/admin/users/${userId}/charge`, "POST", { amount: "1000000", memo: "테스트 지급" });
   check("관리자 직접 충전 1,000,000", ch.status === 200 && ch.data.user.pointBalance === "1000000.00", ch.data);
   check("음수/잘못된 금액 → 400", (await admin.json(`/api/admin/users/${userId}/charge`, "POST", { amount: "-5" })).status === 400);
-  check("소수 3자리 금액 → 400", (await user.json("/api/transactions", "POST", { type: "CHARGE", amount: "1.234" })).status === 400);
+  check("소수 3자리 금액 → 400", (await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "1.234", ...W })).status === 400);
+  const manualCharge = await user.json("/api/transactions", "POST", { type: "CHARGE", amount: "50000", memo: "홍길동 입금" });
+  check("회원 수동 충전 신청 차단 (코인 입금으로만 충전)", manualCharge.status === 400, manualCharge.data);
 
-  const creq = await user.json("/api/transactions", "POST", { type: "CHARGE", amount: "50000", memo: "홍길동 입금" });
-  check("충전 신청 → PENDING", creq.status === 201 && creq.data.transaction.status === "PENDING");
+  // 기존(업데이트 이전)에 접수된 충전 신청은 관리자 승인 흐름이 그대로 동작해야 함
+  const legacy = await prisma.pointTransaction.create({ data: { userId, type: "CHARGE", amount: "50000", status: "PENDING", memo: "기존 충전 신청" } });
+  const creq = { data: { transaction: { id: legacy.id } } };
   check("신청만으로는 잔액 변화 없음", (await user.json("/api/me")).data.balance === "1000000.00");
   const appr = await admin.json(`/api/admin/transactions/${creq.data.transaction.id}`, "POST", { action: "approve" });
   check("관리자 승인 → APPROVED", appr.status === 200 && appr.data.transaction.status === "APPROVED");
@@ -179,10 +185,13 @@ async function main() {
   const dbl = await Promise.all([1, 2].map(() => admin.json(`/api/admin/transactions/${creq.data.transaction.id}`, "POST", { action: "approve" })));
   check("중복 승인 → 409 (이중 반영 없음)", dbl.every((r) => r.status === 409) && (await user.json("/api/me")).data.balance === "1050000.00");
 
-  const wbig = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "2000000" });
+  const wbig = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "2000000", ...W });
   check("잔액 초과 환전 신청 → 400", wbig.status === 400);
-  const wreq = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "50000", memo: "국민 123-456" });
-  check("환전 신청 → PENDING", wreq.status === 201);
+  check("환전: 받을 주소 없음 → 400", (await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "100", cryptoAsset: "USDT_TRC20" })).status === 400);
+  check("환전: 네트워크와 다른 주소 형식 → 400", (await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "100", cryptoAsset: "USDT_TRC20", cryptoAddress: "0x9858EfFD232B4033E47d90003D41EC34EcaEda94" })).status === 400);
+  check("환전: 잘못된 BTC 주소 → 400", (await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "100", cryptoAsset: "BTC", cryptoAddress: "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyx" })).status === 400);
+  const wreq = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "50000", memo: "국민 123-456", ...W });
+  check("환전 신청 → PENDING (받을 코인·주소 저장)", wreq.status === 201 && wreq.data.transaction.cryptoAsset === "USDT_TRC20" && wreq.data.transaction.cryptoAddress === W.cryptoAddress, wreq.data);
   const meW = await user.json("/api/me");
   check("처리중 환전액만큼 사용가능 포인트 감소", meW.data.available === "1000000.00" && meW.data.balance === "1050000.00", meW.data);
   check("거절 사유 없이 거절 → 400", (await admin.json(`/api/admin/transactions/${wreq.data.transaction.id}`, "POST", { action: "reject", reason: "" })).status === 400);
@@ -191,7 +200,7 @@ async function main() {
   const txList = await user.json("/api/transactions");
   check("유저 신청 내역(폴링 API)에 상태 반영", txList.data.transactions.some((t: any) => t.status === "REJECTED") && txList.data.available === "1050000.00");
 
-  const w2 = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "50000" });
+  const w2 = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "50000", ...W });
   const appW = await admin.json(`/api/admin/transactions/${w2.data.transaction.id}`, "POST", { action: "approve" });
   check("환전 승인 → 잔액 차감 (1,000,000)", appW.status === 200 && (await user.json("/api/me")).data.balance === "1000000.00");
 
@@ -220,7 +229,7 @@ async function main() {
   check("단기 7일 예치 이율 1.5% + 1% = 2.5%, 예상이자 500", parOk.every((r) => r.data.deposit.totalRate === "2.5" && r.data.deposit.expectedInterest === "500.00"));
 
   // 처리중 환전이 있으면 그만큼 예치 불가
-  const w3 = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "10000" });
+  const w3 = await user.json("/api/transactions", "POST", { type: "WITHDRAW", amount: "10000", ...W });
   check("처리중 환전액은 예치에 사용 불가", (await user.json("/api/deposits", "POST", { productId: boost.id, termDays: 7, amount: "1" })).status === 400);
   await admin.json(`/api/admin/transactions/${w3.data.transaction.id}`, "POST", { action: "reject", reason: "테스트" });
 
@@ -296,7 +305,7 @@ async function main() {
     const res = await user.raw(p);
     check(`USER ${p} → 200`, res.status === 200, res.status);
   }
-  for (const p of ["/admin", "/admin/users", "/admin/vip-levels", "/admin/products", "/admin/transactions", "/admin/deposits"]) {
+  for (const p of ["/admin", "/admin/users", "/admin/vip-levels", "/admin/products", "/admin/transactions", "/admin/deposits", "/admin/crypto"]) {
     const res = await admin.raw(p);
     check(`ADMIN ${p} → 200`, res.status === 200, res.status);
   }
@@ -316,6 +325,109 @@ async function main() {
   const koPage = await fetch(`${BASE}/strategy`, { redirect: "manual", headers: { cookie: "lang=ko" } });
   const koHtml = await koPage.text();
   check("lang=ko 쿠키 → 한국어 표시", koHtml.includes('<html lang="ko"') && koHtml.includes("로그인"));
+
+  // ───────────────────────────────────────────────
+  section("10. 코인 입금 (HD 지갑 주소 · 컨펌 · 자동 충전 · 중복 방지)");
+  const MOCK = process.env.CRYPTO_MOCK_FILE || "/tmp/mock-chain.json";
+  type MockT = { asset: string; txHash: string; from: string; amount: string; confirmations: number };
+  const writeMock = (transfers: Record<string, MockT[]>, extra: Record<string, unknown> = {}) =>
+    writeFileSync(MOCK, JSON.stringify({ prices: { BTC: "60000", ETH: "3000" }, transfers, ...extra }));
+  writeMock({});
+  check("비로그인 /api/crypto → 401", (await anon.json("/api/crypto")).status === 401);
+  check("관리자 API 회원 접근 → 403", (await user.json("/api/admin/crypto")).status === 403);
+
+  const cu = new Client();
+  const cEmail = `crypto${stamp}@example.com`;
+  await anon.json("/api/signup", "POST", { name: "코인테스터", email: cEmail, password });
+  await cu.login(cEmail, password);
+  const cs = await cu.json("/api/crypto");
+  if (!cs.data.configured) {
+    console.log("  ⚠️  서버가 CRYPTO_XPUB_* / CRYPTO_MOCK_FILE 없이 실행되어 코인 입금 테스트를 건너뜁니다.");
+  } else {
+    const cUser = await prisma.user.findUniqueOrThrow({ where: { email: cEmail }, include: { cryptoWallet: true } });
+    const wid = cUser.cryptoWallet!.id;
+    const addr = Object.fromEntries(cs.data.assets.map((a: any) => [a.id, a.address]));
+    check("입금 주소 4종 발급 (USDT-TRC20 / USDT-ERC20 / ETH / BTC)", cs.data.assets.length === 4);
+    check("HD 인덱스 ≥ 1 (0번은 회사 메인 주소)", wid >= 1);
+    check("ETH·USDT-ERC20 같은 주소 + xpub 파생값과 일치",
+      addr.ETH === addr.USDT_ERC20 && addr.ETH === deriveAddress("ETH", process.env.CRYPTO_XPUB_ETH!, wid) && addr.BTC === deriveAddress("BTC", process.env.CRYPTO_XPUB_BTC!, wid) && addr.USDT_TRC20 === deriveAddress("TRON", process.env.CRYPTO_XPUB_TRON!, wid));
+    check("충전 화면 열면 자동 감시 대상(watchUntil) 등록", !!cUser.cryptoWallet!.watchUntil && cUser.cryptoWallet!.watchUntil > new Date());
+    const cs2 = await cu.json("/api/crypto");
+    check("재요청해도 같은 주소 유지", cs2.data.assets.every((a: any) => addr[a.id] === a.address));
+    check("시세 제공 (BTC/ETH)", cs.data.prices?.BTC === "60000" && cs.data.prices?.ETH === "3000");
+
+    const bal = async () => (await cu.json("/api/me")).data.balance as string;
+    const resetScan = () => prisma.cryptoWallet.update({ where: { id: wid }, data: { lastScannedAt: null } });
+    const t = (asset: string, txHash: string, amount: string, confirmations: number): MockT => ({ asset, txHash: `${txHash}-${stamp}`, from: "sender", amount, confirmations });
+    const H = (h: string) => `${h}-${stamp}`;
+
+    writeMock({
+      [addr.BTC]: [t("BTC", "btc-tx-1", "0.002", 2)],
+      [addr.ETH]: [t("ETH", "eth-tx-1", "0.01", 3)],
+      [addr.USDT_TRC20]: [t("USDT_TRC20", "trc-tx-1", "125.5", 1), t("USDT_TRC20", "trc-dust", "3", 20)],
+    });
+    await resetScan();
+    const s1 = await cu.json("/api/crypto/scan", "POST");
+    const st = (h: string) => s1.data.deposits.find((d: any) => d.txHash === H(h))?.status;
+    check("BTC 2컨펌 → 즉시 충전 (0.002 × $60,000 = 120 P)", st("btc-tx-1") === "CREDITED" && (await bal()) === "120.00", s1.data);
+    check("ETH 3/12컨펌 · USDT 미확정 → 대기(PENDING)", st("eth-tx-1") === "PENDING" && st("trc-tx-1") === "PENDING");
+    check("최소 입금액($10) 미만 → BELOW_MIN (자동 충전 안 함)", st("trc-dust") === "BELOW_MIN");
+    const s1b = await cu.json("/api/crypto/scan", "POST");
+    check("15초 이내 재스캔 요청은 체인 조회 생략 (무료 API 보호)", s1b.data.scanned === false);
+    const wl = await cu.json("/api/transactions");
+    check("지갑 API: 확인 중 코인 입금 표시", wl.data.cryptoPending.length === 3);
+
+    writeMock({
+      [addr.BTC]: [t("BTC", "btc-tx-1", "0.002", 3)],
+      [addr.ETH]: [t("ETH", "eth-tx-1", "0.01", 12)],
+      [addr.USDT_TRC20]: [t("USDT_TRC20", "trc-tx-1", "125.5", 20), t("USDT_TRC20", "trc-dust", "3", 20)],
+    });
+    check("cron 인증 없음 → 401", (await fetch(`${BASE}/api/cron/crypto-scan`)).status === 401);
+    await resetScan();
+    const cron = await fetch(`${BASE}/api/cron/crypto-scan`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
+    const cronJ = await cron.json();
+    check("외부 cron(1분) 호출 → 컨펌 완료분 자동 충전", cron.status === 200 && cronJ.credited === 2, cronJ);
+    check("잔액 = 120 + 125.5 + 30 = 275.5", (await bal()) === "275.50");
+
+    await resetScan();
+    await Promise.all([cu.json("/api/crypto/scan", "POST"), fetch(`${BASE}/api/cron/crypto-scan`, { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }), cu.json("/api/crypto/scan", "POST")]);
+    const txs = await prisma.pointTransaction.count({ where: { userId: cUser.id, type: "CRYPTO_DEPOSIT" } });
+    check("동시 재스캔해도 중복 충전 없음 (충전 3건, 잔액 그대로)", txs === 3 && (await bal()) === "275.50");
+    check("입금 기록 중복 없음 (4건)", (await prisma.cryptoDeposit.count({ where: { userId: cUser.id } })) === 4);
+    const ctx = (await cu.json("/api/transactions")).data.transactions.find((x: any) => x.type === "CRYPTO_DEPOSIT" && x.memo?.includes("BTC"));
+    check("포인트 내역에 코인 입금(수량·시세) 기록", !!ctx && ctx.status === "APPROVED" && ctx.memo.includes("0.002 BTC") && ctx.memo.includes("$60000"), ctx);
+
+    // 시세 조회 실패 시 반영 보류 → 복구 후 반영
+    writeMock({ [addr.BTC]: [t("BTC", "btc-tx-1", "0.002", 3), t("BTC", "btc-tx-2", "0.001", 5)] }, { fail: { PRICE: true } });
+    await resetScan();
+    await cu.json("/api/crypto/scan", "POST");
+    check("시세 실패 시 충전 보류 (PENDING 유지)", (await prisma.cryptoDeposit.findFirst({ where: { txHash: H("btc-tx-2") } }))?.status === "PENDING");
+    writeMock({ [addr.BTC]: [t("BTC", "btc-tx-1", "0.002", 3), t("BTC", "btc-tx-2", "0.001", 6)] });
+    await resetScan();
+    await cu.json("/api/crypto/scan", "POST");
+    check("시세 복구 후 자동 충전 (+60 P)", (await bal()) === "335.50");
+
+    // 체인 API 장애는 다른 체인 처리에 영향 없음
+    writeMock({ [addr.ETH]: [t("ETH", "eth-tx-1", "0.01", 12), t("USDT_ERC20", "erc-tx-1", "50", 12)] }, { fail: { BTC: true, TRON: true } });
+    await resetScan();
+    await cu.json("/api/crypto/scan", "POST");
+    check("BTC/TRON API 장애 중에도 USDT-ERC20 충전 (+50 P)", (await bal()) === "385.50");
+
+    // 관리자 화면
+    const ad = await admin.json("/api/admin/crypto");
+    check("관리자 설정 상태: 3개 체인 정상 + 회사 메인 주소(인덱스 0)", ad.status === 200 && ad.data.config.chains.every((c: any) => c.ok) && ad.data.config.chains.find((c: any) => c.chain === "ETH").mainAddress === "0x9858EfFD232B4033E47d90003D41EC34EcaEda94", ad.data.config);
+    check("관리자 입금 목록 + 통계", ad.data.deposits.filter((d: any) => d.userEmail === cEmail).length === 6 && ad.data.stats.find((s: any) => s.asset === "BTC").creditedCount >= 2);
+    const dust = ad.data.deposits.find((d: any) => d.txHash === H("trc-dust"));
+    const cr1 = await admin.json(`/api/admin/crypto/${dust.id}/credit`, "POST");
+    check("최소 금액 미만 건 관리자 수동 반영 (+3 P)", cr1.status === 200 && (await bal()) === "388.50", cr1.data);
+    check("수동 반영 중복 → 409", (await admin.json(`/api/admin/crypto/${dust.id}/credit`, "POST")).status === 409);
+    const credited = ad.data.deposits.find((d: any) => d.txHash === H("btc-tx-1"));
+    check("이미 충전된 건 수동 반영 불가 → 409", (await admin.json(`/api/admin/crypto/${credited.id}/credit`, "POST")).status === 409);
+    const scanAll = await admin.json("/api/admin/crypto/scan?all=1", "POST");
+    check("관리자 전체 지갑 스캔 → 추가 충전 없음", scanAll.status === 200 && (await bal()) === "388.50", scanAll.data);
+    check("코인 입금 회원 /wallet 렌더링", (await cu.raw("/wallet")).status === 200);
+    writeMock({});
+  }
 
   console.log(`\n결과: ✅ ${passed} 통과 / ❌ ${failed} 실패`);
   if (failed > 0) process.exitCode = 1;

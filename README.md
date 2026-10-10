@@ -55,6 +55,15 @@ npm run dev                   # http://localhost:3000
 
 ※ Vercel 에서는 node-cron 이 자동으로 비활성화됩니다 (`VERCEL` 환경변수 감지).
 
+## 코인 입금 (포인트 충전)
+
+회원별 HD 지갑 주소(USDT-TRC20 / USDT-ERC20 / ETH / BTC)로 입금 → 컨펌 후 자동 충전 (1 P = 1 USD).
+서버에는 공개키(xpub)만 저장. 설정 방법은 **[CRYPTO.md](CRYPTO.md)** 참고.
+
+- 오프라인 지갑 도구: `tools/wallet-setup.html` (소스: `tools/wallet-setup/`)
+- 자동 확인: `GET /api/cron/crypto-scan` (cron-job.org 1분, `Authorization: Bearer $CRON_SECRET`) + 화면 폴링 + 일일 배치
+- 관리자: `/admin/crypto` (설정 상태, 입금 내역, 최소금액 미만 수동 반영, 수동 스캔)
+
 ## 권한
 
 `src/middleware.ts` 에서 1차로 막고, 각 API 핸들러가 `requireAdminApi` / `requireUserApi` 로 한 번 더 검증합니다.

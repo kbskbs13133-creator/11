@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:" />
+<title>D.C Asset · 오프라인 지갑 설정 도구</title>
+<style>
+  *{box-sizing:border-box} body{margin:0;background:#0b0a08;color:#e9e3d6;font:15px/1.6 system-ui,-apple-system,"Segoe UI","Noto Sans KR",sans-serif}
+  .wrap{max-width:860px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:24px;margin:0 0 4px} h2{font-size:17px;margin:0 0 12px}
+  .gold{background:linear-gradient(90deg,#f3dfae,#c9a35b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .muted{color:#9a917f;font-size:13px}
+  .card{background:#14120f;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:20px;margin-top:18px}
+  .warn{background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.35);color:#fda4af;border-radius:12px;padding:12px 14px;font-size:13px}
+  .note{background:rgba(201,163,91,.1);border:1px solid rgba(201,163,91,.3);color:#e8d3a2;border-radius:12px;padding:12px 14px;font-size:13px}
+  ol.steps{margin:8px 0 0;padding-left:20px;color:#cfc6b3;font-size:14px} ol.steps li{margin:4px 0}
+  textarea,input{width:100%;background:#0b0a08;color:#f2ecdf;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 12px;font:14px ui-monospace,Menlo,Consolas,monospace}
+  label{display:block;font-size:13px;color:#b8af9c;margin:12px 0 6px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  button{cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:700;font-size:14px}
+  .primary{background:linear-gradient(90deg,#f3dfae,#c9a35b);color:#1a1408} .secondary{background:#221f1a;color:#e9e3d6;border:1px solid rgba(255,255,255,.12)} .danger{background:transparent;color:#fb7185;border:1px solid rgba(251,113,133,.4)}
+  #words{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;list-style:none;padding:0;margin:0}
+  #words li{background:#0b0a08;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 10px;font:600 15px ui-monospace,Menlo,monospace}
+  #words li span{color:#7d7464;font-size:11px;margin-right:8px}
+  pre{white-space:pre-wrap;word-break:break-all;background:#0b0a08;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px;font:12.5px/1.7 ui-monospace,Menlo,monospace;color:#f3dfae;margin:0}
+  .addr{border-top:1px solid rgba(255,255,255,.07);padding:12px 0} .addr:first-child{border-top:0}
+  .addr b{display:block} .addr small{color:#7d7464;font-family:ui-monospace,monospace}
+  .addr div{display:flex;gap:10px;align-items:baseline;margin-top:4px;flex-wrap:wrap} .addr div span{color:#9a917f;font-size:12px;min-width:88px}
+  .addr code{font:12.5px ui-monospace,Menlo,monospace;word-break:break-all;color:#e9e3d6}
+  .err{color:#fb7185;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="muted">D.C Asset · OFFLINE WALLET SETUP</p>
+  <h1>오프라인 <span class="gold">지갑 설정 도구</span></h1>
+  <p class="muted">회원 입금 주소를 만들 시드(복구 단어)와 서버에 넣을 공개키(xpub)를 만듭니다. 이 파일은 인터넷을 전혀 사용하지 않습니다.</p>
+
+  <div id="online" class="warn" style="margin-top:16px" hidden><b>⚠ 인터넷에 연결되어 있습니다.</b> Wi-Fi/랜선을 끊은 뒤 사용하세요. (권장: 다 쓴 뒤 브라우저를 닫고 다시 연결)</div>
+
+  <div class="card">
+    <h2>사용 순서</h2>
+    <ol class="steps">
+      <li>인터넷을 끊고 이 파일을 브라우저로 엽니다.</li>
+      <li><b>새 시드 생성</b>을 누르고, 나온 <b>24단어를 종이에 순서대로 적어</b> 안전한 곳에 보관합니다. (사진·캡처·메모앱·클라우드 저장 금지)</li>
+      <li>아래 <b>환경변수 3줄</b>을 복사해 Vercel → Settings → Environment Variables 에 추가합니다. (xpub 은 공개키라 서버에 넣어도 코인을 빼갈 수 없습니다)</li>
+      <li><b>모두 지우기</b>를 누르고 브라우저를 닫은 뒤 인터넷을 다시 연결합니다.</li>
+      <li>배포 후 관리자 → 코인 입금 화면의 <b>"회사 메인 주소"</b>가 여기 표시된 <b>#0 주소</b>와 같은지 확인합니다.</li>
+    </ol>
+    <div class="note" style="margin-top:12px">24단어를 잃어버리면 회원들이 입금한 코인을 <b>영구히 꺼낼 수 없습니다.</b> 반대로 24단어가 유출되면 누구나 모든 입금 주소의 코인을 가져갈 수 있습니다. 한 번 설정한 xpub 은 바꾸지 마세요.</div>
+  </div>
+
+  <div class="card">
+    <h2>1. 시드 만들기 / 불러오기</h2>
+    <label for="mn">복구 단어 (새로 만들거나, 기존 단어를 붙여넣기)</label>
+    <textarea id="mn" rows="3" spellcheck="false" autocomplete="off" placeholder="새 시드 생성을 누르면 여기에 24단어가 표시됩니다"></textarea>
+    <label for="pp">추가 암호 (BIP-39 passphrase, 선택 — 모르면 비워두세요. 입력했다면 단어와 함께 반드시 기억해야 합니다)</label>
+    <input id="pp" type="password" autocomplete="off" />
+    <div class="row">
+      <button id="gen" class="primary">새 시드 생성 (24단어)</button>
+      <button id="use" class="secondary">입력한 단어로 계산</button>
+      <button id="wipe" class="danger">모두 지우기</button>
+    </div>
+    <p id="err" class="err" hidden></p>
+  </div>
+
+  <div id="result" hidden>
+    <div class="card">
+      <h2>2. 복구 단어 — 종이에 적어 보관</h2>
+      <ol id="words"></ol>
+    </div>
+    <div class="card">
+      <h2>3. Vercel 환경변수 (공개키 xpub)</h2>
+      <pre id="env"></pre>
+      <div class="row"><button id="copy" class="primary">환경변수 복사</button></div>
+    </div>
+    <div class="card">
+      <h2>4. 확인용 주소</h2>
+      <p class="muted">#0 은 회사 메인(회수) 주소, #1부터 회원 입금 주소입니다. MetaMask(ETH)·TronLink(TRON)·Electrum(BTC, Native SegWit)에 같은 24단어를 넣으면 같은 주소가 나옵니다.</p>
+      <div id="addrs"></div>
+    </div>
+  </div>
+</div>
+<script>/*__BUNDLE__*/</script>
+</body>
+</html>

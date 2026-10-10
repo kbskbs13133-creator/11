@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AMOUNT_REGEX } from "./format";
+import { isValidBtcAddress, isValidEthAddress, isValidTronAddress } from "./crypto/hd";
 
 export const amountSchema = z
   .string({ required_error: "금액을 입력해주세요." })
@@ -49,11 +50,22 @@ export const depositSchema = z.object({
   amount: amountSchema,
 });
 
-export const transactionRequestSchema = z.object({
-  type: z.enum(["CHARGE", "WITHDRAW"]),
-  amount: amountSchema,
-  memo: z.string().trim().max(200).optional(),
-});
+export const transactionRequestSchema = z
+  .object({
+    type: z.enum(["CHARGE", "WITHDRAW"]),
+    amount: amountSchema,
+    memo: z.string().trim().max(200).optional(),
+    cryptoAsset: z.enum(["USDT_TRC20", "USDT_ERC20", "ETH", "BTC"]).optional(),
+    cryptoAddress: z.string().trim().max(100).optional(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.type !== "WITHDRAW") return;
+    if (!v.cryptoAsset) return ctx.addIssue({ code: "custom", message: "받을 코인/네트워크를 선택해주세요.", path: ["cryptoAsset"] });
+    const a = v.cryptoAddress ?? "";
+    if (!a) return ctx.addIssue({ code: "custom", message: "받을 지갑 주소를 입력해주세요.", path: ["cryptoAddress"] });
+    const valid = v.cryptoAsset === "BTC" ? isValidBtcAddress(a) : v.cryptoAsset === "USDT_TRC20" ? isValidTronAddress(a) : isValidEthAddress(a);
+    if (!valid) ctx.addIssue({ code: "custom", message: "선택한 네트워크의 지갑 주소 형식이 아닙니다.", path: ["cryptoAddress"] });
+  });
 
 export const vipLevelsSchema = z.object({
   levels: z

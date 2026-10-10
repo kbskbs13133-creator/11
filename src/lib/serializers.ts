@@ -1,5 +1,5 @@
-import type { Product, ProductRate, Deposit, PointTransaction, VipLevel } from "@prisma/client";
-import { s2, sRate } from "./money";
+import type { Product, ProductRate, Deposit, PointTransaction, VipLevel, CryptoDeposit } from "@prisma/client";
+import { s2, sPlain, sRate } from "./money";
 
 export type ProductDTO = {
   id: string;
@@ -63,7 +63,26 @@ export function transactionDTO(t: PointTransaction) {
     rejectReason: t.rejectReason,
     processedAt: t.processedAt?.toISOString() ?? null,
     balanceAfter: s2(t.balanceAfter),
+    cryptoAsset: t.cryptoAsset,
+    cryptoAddress: t.cryptoAddress,
     createdAt: t.createdAt.toISOString(),
+  };
+}
+
+export type CryptoDepositDTO = ReturnType<typeof cryptoDepositDTO>;
+export function cryptoDepositDTO(d: CryptoDeposit) {
+  return {
+    id: d.id,
+    asset: d.asset,
+    txHash: d.txHash,
+    fromAddress: d.fromAddress,
+    amount: sPlain(d.amount),
+    confirmations: d.confirmations,
+    status: d.status,
+    priceUsd: d.priceUsd ? d.priceUsd.toDecimalPlaces(2).toFixed(2) : null,
+    points: s2(d.points),
+    detectedAt: d.detectedAt.toISOString(),
+    creditedAt: d.creditedAt?.toISOString() ?? null,
   };
 }
 
