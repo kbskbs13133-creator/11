@@ -17,8 +17,8 @@ export function TopNav({ items, exactHref }: { items: NavItem[]; exactHref?: str
         <Link
           key={it.href}
           href={it.href}
-          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-            isActive(path, it.href, it.href === exactHref) ? "bg-brand-50 text-brand-700" : "text-slate-600 hover:bg-slate-100"
+          className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+            isActive(path, it.href, it.href === exactHref) ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-400/25" : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-800"
           }`}
         >
           {it.label}
@@ -32,7 +32,7 @@ export function TopNav({ items, exactHref }: { items: NavItem[]; exactHref?: str
 export function BottomNav({ items, exactHref }: { items: NavItem[]; exactHref?: string }) {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.06] bg-ink-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
       <div className="flex overflow-x-auto">
         {items.map((it) => {
           const active = isActive(path, it.href, it.href === exactHref);
@@ -40,7 +40,7 @@ export function BottomNav({ items, exactHref }: { items: NavItem[]; exactHref?: 
             <Link
               key={it.href}
               href={it.href}
-              className={`flex min-w-[64px] flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${active ? "text-brand-600" : "text-slate-500"}`}
+              className={`flex min-w-[64px] flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${active ? "text-brand-600" : "text-slate-400"}`}
             >
               <Icon name={it.icon} />
               {it.label}

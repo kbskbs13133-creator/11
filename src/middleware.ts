@@ -54,9 +54,10 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 루트: 역할별 홈 / 로그인
+  // 루트: 로그인 상태면 역할별 홈으로, 아니면 소개(랜딩) 페이지 표시
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(token ? homeFor(role) : "/login", req.url));
+    if (token) return NextResponse.redirect(new URL(homeFor(role), req.url));
+    return NextResponse.next();
   }
 
   // 관리자 영역

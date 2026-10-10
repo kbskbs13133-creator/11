@@ -1,12 +1,13 @@
-type Tone = "gray" | "blue" | "green" | "red" | "amber" | "purple";
+type Tone = "gray" | "blue" | "green" | "red" | "amber" | "purple" | "gold";
 
 const tones: Record<Tone, string> = {
-  gray: "bg-slate-100 text-slate-700 ring-slate-200",
+  gray: "bg-white/[0.04] text-slate-600 ring-white/10",
   blue: "bg-blue-50 text-blue-700 ring-blue-200",
   green: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   red: "bg-rose-50 text-rose-700 ring-rose-200",
   amber: "bg-amber-50 text-amber-700 ring-amber-200",
   purple: "bg-violet-50 text-violet-700 ring-violet-200",
+  gold: "bg-brand-50 text-brand-700 ring-brand-400/40",
 };
 
 export default function Badge({ tone = "gray", children }: { tone?: Tone; children: React.ReactNode }) {
@@ -36,6 +37,6 @@ export function DepositStatusBadge({ status }: { status: string }) {
 }
 
 export function VipBadge({ level, name }: { level: number; name?: string }) {
-  const tone: Tone[] = ["gray", "gray", "blue", "amber", "purple", "red"];
+  const tone: Tone[] = ["gray", "gray", "blue", "purple", "amber", "gold"];
   return <Badge tone={tone[level] ?? "gray"}>VIP {level}{name ? ` · ${name}` : ""}</Badge>;
 }

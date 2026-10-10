@@ -27,7 +27,10 @@ export default function SignupPage() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <h2 className="text-lg font-bold">회원가입</h2>
+      <div>
+        <p className="eyebrow">CREATE ACCOUNT</p>
+        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">회원가입</h2>
+      </div>
       <div>
         <label className="label" htmlFor="name">이름</label>
         <input id="name" className="input" value={form.name} onChange={set("name")} required maxLength={30} />

@@ -13,13 +13,14 @@ export default function ProductList({ products, available, vip }: { products: Pr
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="page-title">예치 상품</h1>
+          <p className="eyebrow">PRODUCTS</p>
+          <h1 className="page-title mt-1">예치 상품</h1>
           <p className="mt-1 text-sm text-slate-500">매일 자정 이자가 자동 지급되고, 만기일에 원금이 자동 반환됩니다.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <VipBadge level={vip.level} name={vip.name} />
           {Number(vip.bonusRate) > 0 && <span className="text-brand-600">모든 상품 +{formatRate(vip.bonusRate)} 추가 적용</span>}
-          <span className="rounded-full bg-white px-3 py-1 ring-1 ring-slate-200">
+          <span className="rounded-full bg-white/[0.03] px-3 py-1 ring-1 ring-white/10">
             사용 가능 <b>{formatAmount(available)}</b>
           </span>
         </div>
@@ -30,10 +31,10 @@ export default function ProductList({ products, available, vip }: { products: Pr
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {products.map((p) => (
-            <div key={p.id} className="card flex flex-col gap-4">
+            <div key={p.id} className="card flex flex-col gap-4 transition hover:border-brand-400/25">
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-lg font-bold">{p.name}</h2>
-                <span className="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                <span className="shrink-0 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-400/30">
                   최대 {formatRate(p.rates.reduce((m, r) => (Number(r.rate) > Number(m) ? r.rate : m), "0"))}
                 </span>
               </div>

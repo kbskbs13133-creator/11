@@ -1,17 +1,22 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Modal from "@/components/Modal";
+import AmountInput from "@/components/AmountInput";
 import { api } from "@/lib/client";
 import { useToast } from "@/components/Toast";
 import { TxStatusBadge, TxTypeBadge } from "@/components/Badge";
 import { AMOUNT_REGEX, formatAmount, formatDateTime } from "@/lib/format";
 import type { TransactionDTO } from "@/lib/serializers";
+import { centsToString, toCents } from "@/lib/clientMath";
 
 type WalletData = { transactions: TransactionDTO[]; balance: string; pendingWithdraw: string; available: string };
 type ReqType = "CHARGE" | "WITHDRAW";
 
 const POLL_PENDING_MS = 5000; // 처리중 신청이 있을 때 폴링 간격
 const POLL_IDLE_MS = 30000; // 평상시 폴링 간격
+
+// 충전 빠른 선택 버튼 (누를 때마다 더해짐)
+const CHARGE_PRESETS = ["100000", "1000000", "10000000", "100000000"];
 
 const typeLabel = (t: string) => (t === "CHARGE" ? "충전" : t === "WITHDRAW" ? "환전" : "관리자 충전");
 
@@ -65,6 +70,12 @@ export default function Wallet({ initial }: { initial: WalletData }) {
     };
   }, [hasPending, refresh]);
 
+  function addCharge(v: string) {
+    const cur = toCents(amount) ?? 0n;
+    const next = cur + BigInt(v) * 100n;
+    setAmount(centsToString(next).replace(/\.00$/, ""));
+  }
+
   function open(type: ReqType) {
     setModal(type);
     setAmount("");
@@ -97,16 +108,16 @@ export default function Wallet({ initial }: { initial: WalletData }) {
     <div className="space-y-5">
       <h1 className="page-title">지갑</h1>
 
-      <div className="card bg-gradient-to-br from-brand-600 to-brand-900 text-white">
-        <p className="text-sm text-blue-100">보유 포인트</p>
-        <p className="mt-1 text-3xl font-bold tracking-tight">{formatAmount(data.balance)}</p>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-blue-100">
-          <span>사용 가능 <b className="text-white">{formatAmount(data.available)}</b></span>
-          {Number(data.pendingWithdraw) > 0 && <span>환전 처리중 <b className="text-white">{formatAmount(data.pendingWithdraw)}</b></span>}
+      <div className="card-gold sm:!p-7">
+        <p className="eyebrow">BALANCE</p>
+        <p className="mt-2 text-3xl font-bold tracking-tight text-gold sm:text-4xl">{formatAmount(data.balance)}</p>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+          <span>사용 가능 <b className="text-slate-900">{formatAmount(data.available)}</b></span>
+          {Number(data.pendingWithdraw) > 0 && <span>환전 처리중 <b className="text-slate-900">{formatAmount(data.pendingWithdraw)}</b></span>}
         </div>
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <button className="btn bg-white text-brand-700 hover:bg-blue-50" onClick={() => open("CHARGE")}>포인트 충전</button>
-          <button className="btn bg-white/15 text-white ring-1 ring-white/40 hover:bg-white/25" onClick={() => open("WITHDRAW")}>포인트 환전</button>
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button className="btn-primary !py-2.5" onClick={() => open("CHARGE")}>포인트 충전</button>
+          <button className="btn-secondary !py-2.5" onClick={() => open("WITHDRAW")}>포인트 환전</button>
         </div>
       </div>
 
@@ -162,21 +173,21 @@ export default function Wallet({ initial }: { initial: WalletData }) {
           {modal === "WITHDRAW" && <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">환전 가능 포인트: <b>{formatAmount(data.available)}</b></p>}
           <div>
             <label className="label" htmlFor="req-amount">금액</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input id="req-amount" className="input pr-8" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" autoFocus />
-                <span className="pointer-events-none absolute right-3 top-2 text-sm text-slate-400">P</span>
-              </div>
-              {modal === "WITHDRAW" && <button type="button" className="btn-secondary" onClick={() => setAmount(data.available)}>전액</button>}
-            </div>
+            <AmountInput id="req-amount" value={amount} onChange={setAmount} autoFocus />
             {modal === "CHARGE" && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {["10000", "50000", "100000", "500000"].map((v) => (
-                  <button type="button" key={v} className="btn-secondary btn-sm" onClick={() => setAmount(String((Number(amount.replace(/,/g, "")) || 0) + Number(v)))}>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                {CHARGE_PRESETS.map((v) => (
+                  <button type="button" key={v} className="btn-secondary btn-sm tabular-nums" onClick={() => addCharge(v)}>
                     +{formatAmount(v, false)}
                   </button>
                 ))}
               </div>
+            )}
+            {modal === "CHARGE" && amount && (
+              <button type="button" className="mt-2 text-xs text-slate-500 hover:text-brand-600" onClick={() => setAmount("")}>금액 초기화</button>
+            )}
+            {modal === "WITHDRAW" && (
+              <button type="button" className="btn-secondary btn-sm mt-1 w-full" onClick={() => setAmount(data.available.replace(/\.00$/, ""))}>전액</button>
             )}
           </div>
           <div>

@@ -93,9 +93,9 @@ export default function TransactionAdmin() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <div className="flex rounded-lg bg-slate-200/60 p-1">
+        <div className="flex rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
           {STATUS_TABS.map((t) => (
-            <button key={t.key} onClick={() => setStatus(t.key)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${status === t.key ? "bg-white shadow-sm" : "text-slate-600"}`}>
+            <button key={t.key} onClick={() => setStatus(t.key)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${status === t.key ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-400/25" : "text-slate-500 hover:text-slate-800"}`}>
               {t.label}
             </button>
           ))}

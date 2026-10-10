@@ -34,9 +34,9 @@ export default function MyDeposits({ deposits }: { deposits: DepositDTO[] }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="page-title">내 예치 내역</h1>
-        <div className="flex rounded-lg bg-slate-200/60 p-1">
+        <div className="flex rounded-xl border border-white/[0.07] bg-white/[0.03] p-1">
           {TABS.map((t) => (
-            <button key={t.key} onClick={() => setTab(t.key)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${tab === t.key ? "bg-white shadow-sm" : "text-slate-600"}`}>
+            <button key={t.key} onClick={() => setTab(t.key)} className={`rounded-md px-3 py-1.5 text-sm font-medium ${tab === t.key ? "bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-400/25" : "text-slate-500 hover:text-slate-800"}`}>
               {t.label}
               <span className="ml-1 text-xs text-slate-400">{t.key === "ALL" ? deposits.length : deposits.filter((d) => d.status === t.key).length}</span>
             </button>

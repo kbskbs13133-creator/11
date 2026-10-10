@@ -25,17 +25,20 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="page-title">안녕하세요, {user.name}님</h1>
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <p className="eyebrow">MY ACCOUNT</p>
+          <h1 className="page-title mt-1">안녕하세요, {user.name}님</h1>
+        </div>
         <VipBadge level={user.vipLevel} name={user.vip.name} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="card bg-gradient-to-br from-brand-600 to-brand-900 text-white sm:col-span-2 lg:col-span-1">
-          <p className="text-sm text-blue-100">보유 포인트</p>
-          <p className="mt-1 text-2xl font-bold">{formatAmount(s2(summary.balance))}</p>
-          <p className="mt-2 text-xs text-blue-100">사용 가능 {formatAmount(s2(summary.available))}</p>
-          <Link href="/wallet" className="mt-3 inline-block text-xs font-semibold text-white underline-offset-2 hover:underline">
+        <div className="card-gold sm:col-span-2 lg:col-span-1">
+          <p className="eyebrow">BALANCE</p>
+          <p className="mt-2 text-2xl font-bold tracking-tight text-gold">{formatAmount(s2(summary.balance))}</p>
+          <p className="mt-2 text-xs text-slate-500">사용 가능 {formatAmount(s2(summary.available))}</p>
+          <Link href="/wallet" className="mt-3 inline-block text-xs font-semibold text-brand-600 underline-offset-2 hover:underline">
             지갑 바로가기 →
           </Link>
         </div>
@@ -75,7 +78,7 @@ export default async function DashboardPage() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {activeDTO.map((d) => (
-              <Link key={d.id} href="/my-deposits" className="card block !p-4 transition hover:shadow-md">
+              <Link key={d.id} href="/my-deposits" className="card block !p-4 transition hover:border-brand-400/30">
                 <div className="flex items-center justify-between gap-2">
                   <div className="font-semibold">{d.productName}</div>
                   <DepositStatusBadge status={d.status} />

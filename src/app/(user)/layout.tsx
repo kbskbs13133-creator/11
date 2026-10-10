@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUserPage } from "@/lib/session";
 import { TopNav, BottomNav, type NavItem } from "@/components/NavLinks";
 import SignOutButton from "@/components/SignOutButton";
+import Logo from "@/components/Logo";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +17,10 @@ export default async function UserLayout({ children }: { children: React.ReactNo
   const user = await requireUserPage();
   return (
     <div className="min-h-screen pb-20 md:pb-0">
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold text-slate-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-black text-white">P</span>
-            <span className="hidden sm:inline">포인트 예치</span>
+      <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-ink-950/75 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+          <Link href="/dashboard" className="shrink-0">
+            <Logo />
           </Link>
           <TopNav items={items} />
           <div className="flex items-center gap-3">

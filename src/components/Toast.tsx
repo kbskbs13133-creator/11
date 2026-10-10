@@ -15,9 +15,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const color: Record<ToastKind, string> = {
-    success: "bg-emerald-600",
-    error: "bg-rose-600",
-    info: "bg-slate-800",
+    success: "border-emerald-500/40 bg-[#0f2a1f]/95 text-emerald-800",
+    error: "border-rose-500/40 bg-[#2a1316]/95 text-rose-800",
+    info: "border-brand-400/30 bg-ink-700/95 text-slate-800",
   };
 
   return (
@@ -28,7 +28,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto w-full max-w-sm rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg ${color[t.kind]}`}
+            className={`pointer-events-auto w-full max-w-sm rounded-xl border px-4 py-3 text-sm font-medium shadow-2xl backdrop-blur ${color[t.kind]}`}
           >
             {t.message}
           </div>

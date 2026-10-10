@@ -36,7 +36,10 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <h2 className="text-lg font-bold">로그인</h2>
+      <div>
+        <p className="eyebrow">WELCOME BACK</p>
+        <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-900">로그인</h2>
+      </div>
       {justSignedUp && (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">회원가입이 완료되었습니다. 로그인해주세요.</p>
       )}
