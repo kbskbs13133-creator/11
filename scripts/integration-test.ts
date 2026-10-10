@@ -99,7 +99,7 @@ async function main() {
 
   check("USER → /api/admin/products 403", (await user.json("/api/admin/products")).status === 403);
   const r2 = await user.raw("/admin/users");
-  check("USER → /admin/users 는 /dashboard 로 리다이렉트", r2.status === 307 && (r2.headers.get("location") ?? "").includes("/dashboard"));
+  check("USER → /admin/users 는 /home 으로 리다이렉트", r2.status === 307 && (r2.headers.get("location") ?? "").includes("/home"));
   check("ADMIN → /api/deposits 403 (유저 전용)", (await admin.json("/api/deposits", "POST", {})).status === 403);
   check("로그인 상태에서 /login → 홈 리다이렉트", (await user.raw("/login")).status === 307);
 
@@ -292,7 +292,7 @@ async function main() {
 
   // ───────────────────────────────────────────────
   section("8. 페이지 렌더링");
-  for (const p of ["/dashboard", "/products", "/wallet", "/my-deposits"]) {
+  for (const p of ["/home", "/dashboard", "/products", "/wallet", "/my-deposits"]) {
     const res = await user.raw(p);
     check(`USER ${p} → 200`, res.status === 200, res.status);
   }

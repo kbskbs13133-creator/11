@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <TopNav items={items} exactHref="/admin" />
           </div>
           <div className="flex items-center gap-3">
-            <span className="max-w-[120px] truncate text-sm text-slate-500">{user.name}</span>
+            <span className="hidden max-w-[120px] truncate text-sm text-slate-500 sm:inline">{user.name}</span>
             <SignOutButton />
           </div>
         </div>

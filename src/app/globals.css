@@ -6,6 +6,8 @@
   :root { color-scheme: dark; }
   body {
     @apply bg-ink-950 text-slate-800 antialiased;
+    word-break: keep-all; /* 한글 단어 중간 줄바꿈 방지 */
+    overflow-wrap: break-word;
     background-image:
       radial-gradient(1200px 600px at 85% -10%, rgba(214, 178, 100, 0.10), transparent 60%),
       radial-gradient(900px 500px at -10% 10%, rgba(214, 178, 100, 0.05), transparent 60%);

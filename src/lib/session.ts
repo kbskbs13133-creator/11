@@ -15,7 +15,7 @@ export async function requireUserPage() {
 export async function requireAdminPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "ADMIN") redirect("/dashboard");
+  if (session.user.role !== "ADMIN") redirect("/home");
   return session.user;
 }
 

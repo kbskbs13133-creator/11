@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
 import { BRAND } from "@/lib/brand";
 import { formatRate, termLabel } from "@/lib/format";
+import { loadShowcase } from "@/lib/showcase";
 import Logo from "@/components/Logo";
+import { ProductShowcase, RateTicker, SectionTitle, StepsSection, VipShowcase, pp } from "@/components/Showcase";
 
 // 로그인한 사용자는 미들웨어에서 역할별 홈으로 이동하고, 비로그인 방문자에게만 이 소개 페이지가 보입니다.
 export const dynamic = "force-dynamic";
@@ -12,35 +13,12 @@ export const metadata = {
   description: "기간별 확정 수익률 상품에 포인트를 예치하고 매일 자정 이자를 받으세요.",
 };
 
-const num = (v: { toString(): string }) => Number(v.toString());
-
 export default async function LandingPage() {
-  const [productsRaw, vips] = await Promise.all([
-    prisma.product.findMany({
-      where: { isActive: true },
-      include: { rates: { orderBy: { termDays: "asc" } } },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    }),
-    prisma.vipLevel.findMany({ orderBy: { level: "asc" } }),
-  ]);
-
-  const products = productsRaw
-    .filter((p) => p.rates.length > 0)
-    .map((p) => ({
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      rates: p.rates.map((r) => ({ termDays: r.termDays, rate: r.rate.toString(), n: num(r.rate) })),
-    }));
-
-  const allRates = products.flatMap((p) => p.rates.map((r) => ({ ...r, product: p.name })));
-  const best = allRates.reduce<(typeof allRates)[number] | null>((m, r) => (!m || r.n > m.n ? r : m), null);
-  const maxRate = best?.n ?? 0;
-  const topVip = vips.reduce<(typeof vips)[number] | null>((m, v) => (!m || num(v.bonusRate) > num(m.bonusRate) ? v : m), null);
-  const ticker = allRates.length ? [...allRates, ...allRates] : [];
+  const data = await loadShowcase();
+  const { products, vips, best, maxRate, topVip } = data;
 
   return (
-    <div className="relative overflow-x-hidden">
+    <div className="relative overflow-x-clip">
       {/* ───────── 헤더 ───────── */}
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
@@ -94,7 +72,7 @@ export default async function LandingPage() {
                 만기 원금 자동 반환
               </li>
               <li>
-                <div className="text-lg font-bold text-slate-900">+{formatRate(topVip?.bonusRate.toString() ?? "0").replace("%", "%p")}</div>
+                <div className="text-lg font-bold text-slate-900">+{pp(topVip?.bonusRate ?? "0")}</div>
                 VIP 최대 추가 이율
               </li>
             </ul>
@@ -155,28 +133,13 @@ export default async function LandingPage() {
             </div>
             <div className="absolute -bottom-7 right-6 hidden animate-float rounded-2xl border border-white/10 bg-ink-800/90 px-4 py-3 shadow-2xl backdrop-blur [animation-delay:1.5s] sm:block">
               <p className="text-[10px] tracking-wider text-slate-400">{topVip ? `VIP ${topVip.level} · ${topVip.name}` : "VIP"}</p>
-              <p className="text-sm font-semibold text-brand-600">추가 이율 +{formatRate(topVip?.bonusRate.toString() ?? "0").replace("%", "%p")}</p>
+              <p className="text-sm font-semibold text-brand-600">추가 이율 +{pp(topVip?.bonusRate ?? "0")}</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ───────── 수익률 티커 ───────── */}
-      {ticker.length > 0 && (
-        <div className="relative border-y border-white/[0.06] bg-ink-900/60 py-3.5">
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-ink-950 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-ink-950 to-transparent" />
-          <div className="flex w-max animate-marquee gap-10 whitespace-nowrap text-sm">
-            {ticker.map((r, i) => (
-              <span key={i} className="flex items-center gap-3 text-slate-500">
-                <span className="h-1 w-1 rounded-full bg-brand-500" />
-                {r.product} · {termLabel(r.termDays)}
-                <b className="font-semibold text-brand-600">{formatRate(r.rate)}</b>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <RateTicker data={data} />
 
       {/* ───────── 핵심 수치 ───────── */}
       <section className="mx-auto max-w-6xl px-4 py-14">
@@ -197,115 +160,28 @@ export default async function LandingPage() {
 
       {/* ───────── 상품 ───────── */}
       <section id="products" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-        <div className="text-center">
-          <p className="eyebrow">PRODUCTS</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            기간을 고르면, <span className="text-gold">수익률이 확정</span>됩니다
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-sm text-slate-500">표시된 이율은 해당 기간 전체의 총 수익률이며, 매일 균등하게 나누어 지급됩니다.</p>
-        </div>
-
-        {products.length === 0 ? (
-          <div className="card mt-10 text-center text-sm text-slate-500">곧 새로운 상품이 공개됩니다.</div>
-        ) : (
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
-            {products.map((p, idx) => {
-              const top = Math.max(...p.rates.map((r) => r.n));
-              return (
-                <article key={p.id} className="group relative overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-b from-ink-700/80 to-ink-900/80 p-6 transition duration-300 hover:-translate-y-1 hover:border-brand-400/30 sm:p-7">
-                  <div aria-hidden className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-500/10 blur-3xl transition group-hover:bg-brand-500/20" />
-                  <div className="relative flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-semibold tracking-[0.2em] text-slate-400">NO. {String(idx + 1).padStart(2, "0")}</span>
-                      <h3 className="mt-1 text-xl font-bold tracking-tight text-slate-900">{p.name}</h3>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-[11px] text-slate-400">최대</div>
-                      <div className="text-2xl font-bold text-gold">{formatRate(String(top))}</div>
-                    </div>
-                  </div>
-                  {p.description && <p className="relative mt-3 line-clamp-2 whitespace-pre-line text-sm leading-relaxed text-slate-500">{p.description}</p>}
-                  <ul className="relative mt-6 space-y-3">
-                    {p.rates.map((r) => (
-                      <li key={r.termDays} className="grid grid-cols-[64px_1fr_56px] items-center gap-3 text-sm">
-                        <span className="text-slate-500">{termLabel(r.termDays)}</span>
-                        <span className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                          <span
-                            className="block h-full rounded-full bg-gradient-to-r from-brand-300 via-brand-500 to-brand-700"
-                            style={{ width: `${maxRate ? Math.max(6, (r.n / maxRate) * 100) : 0}%` }}
-                          />
-                        </span>
-                        <span className="text-right font-semibold tabular-nums text-slate-900">{formatRate(r.rate)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="relative mt-7 flex items-center justify-between border-t border-white/[0.06] pt-5">
-                    <span className="text-xs text-slate-400">{p.rates.length}개 기간 선택 가능</span>
-                    <Link href="/signup" className="text-sm font-semibold text-brand-600 transition group-hover:text-brand-700">
-                      예치하기 →
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+        <SectionTitle eyebrow="PRODUCTS" title="기간을 고르면," gold="수익률이 확정" tail="됩니다" desc="표시된 이율은 해당 기간 전체의 총 수익률이며, 매일 균등하게 나누어 지급됩니다." />
+        <ProductShowcase products={products} maxRate={maxRate} href="/signup" />
       </section>
 
       {/* ───────── 이용 방법 ───────── */}
       <section id="how" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-        <div className="text-center">
-          <p className="eyebrow">HOW IT WORKS</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            단 네 걸음이면 <span className="text-gold">충분합니다</span>
-          </h2>
-        </div>
-        <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
+        <SectionTitle eyebrow="HOW IT WORKS" title="단 네 걸음이면" gold="충분합니다" />
+        <StepsSection
+          steps={[
             { t: "회원가입", d: "이메일과 비밀번호만으로 1분 안에 계정을 만듭니다." },
             { t: "포인트 충전", d: "충전을 신청하면 관리자 확인 후 즉시 반영됩니다." },
             { t: "상품 예치", d: "원하는 상품과 기간을 고르는 순간 수익률이 확정됩니다." },
             { t: "매일 이자 · 만기 반환", d: "매일 자정 이자가 쌓이고, 만기일에 원금이 돌아옵니다." },
-          ].map((s, i) => (
-            <li key={s.t} className="card relative overflow-hidden !p-6">
-              <span className="absolute -right-2 -top-4 text-7xl font-black text-white/[0.03]">{i + 1}</span>
-              <span className="text-sm font-bold text-gold">{String(i + 1).padStart(2, "0")}</span>
-              <h3 className="mt-3 font-bold text-slate-900">{s.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">{s.d}</p>
-            </li>
-          ))}
-        </ol>
+          ]}
+        />
       </section>
 
       {/* ───────── VIP ───────── */}
       {vips.length > 0 && (
         <section id="vip" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
-          <div className="text-center">
-            <p className="eyebrow">VIP MEMBERSHIP</p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              등급이 높을수록, <span className="text-gold">이율도 높아집니다</span>
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm text-slate-500">VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급으로 확정됩니다.</p>
-          </div>
-          <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            {vips.map((v) => {
-              const isTop = topVip?.level === v.level;
-              return (
-                <div
-                  key={v.level}
-                  className={`relative rounded-2xl border p-5 text-center transition ${
-                    isTop ? "border-brand-400/50 bg-gradient-to-b from-brand-50 to-ink-900 shadow-[0_20px_50px_-25px_rgba(214,178,100,0.6)]" : "border-white/[0.07] bg-ink-800/70"
-                  }`}
-                >
-                  {isTop && <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-brand-700 to-brand-400 px-2.5 py-0.5 text-[10px] font-bold text-ink-950">BEST</span>}
-                  <div className="text-[11px] font-semibold tracking-[0.2em] text-slate-400">VIP {v.level}</div>
-                  <div className="mt-1 font-bold text-slate-900">{v.name}</div>
-                  <div className={`mt-3 text-2xl font-bold ${isTop ? "text-gold" : "text-brand-600"}`}>+{formatRate(v.bonusRate.toString()).replace("%", "%p")}</div>
-                  <div className="mt-1 text-[11px] text-slate-400">추가 이율</div>
-                </div>
-              );
-            })}
-          </div>
+          <SectionTitle eyebrow="VIP MEMBERSHIP" title="등급이 높을수록," gold="이율도 높아집니다" desc="VIP 추가 이율은 모든 상품의 기본 이율에 더해지며, 예치 시점의 등급으로 확정됩니다." />
+          <VipShowcase vips={vips} topVip={topVip} />
         </section>
       )}
 

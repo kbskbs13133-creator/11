@@ -4,12 +4,12 @@ import { getToken, type JWT } from "next-auth/jwt";
 /**
  * 권한 분리 미들웨어
  *  - /admin/**, /api/admin/**         : ADMIN 전용
- *  - /dashboard, /products, /wallet, /my-deposits, /api/deposits, /api/transactions, /api/me : USER 전용
+ *  - /home, /dashboard, /products, /wallet, /my-deposits, /api/deposits, /api/transactions, /api/me : USER 전용
  *  - /login, /signup                  : 로그인 상태면 역할별 홈으로 이동
  *  - /api/cron/**                     : 미들웨어 제외 (CRON_SECRET 으로 핸들러에서 검증)
  */
 
-const USER_PAGES = ["/dashboard", "/products", "/wallet", "/my-deposits"];
+const USER_PAGES = ["/home", "/dashboard", "/products", "/wallet", "/my-deposits"];
 const USER_APIS = ["/api/deposits", "/api/transactions", "/api/me"];
 const AUTH_PAGES = ["/login", "/signup"];
 
@@ -25,7 +25,7 @@ async function readToken(req: NextRequest): Promise<JWT | null> {
   );
 }
 
-const homeFor = (role?: string) => (role === "ADMIN" ? "/admin" : "/dashboard");
+const homeFor = (role?: string) => (role === "ADMIN" ? "/admin" : "/home");
 
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
@@ -82,6 +82,7 @@ export const config = {
     "/",
     "/login",
     "/signup",
+    "/home/:path*",
     "/dashboard/:path*",
     "/products/:path*",
     "/wallet/:path*",

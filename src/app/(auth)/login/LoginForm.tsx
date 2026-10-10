@@ -23,7 +23,7 @@ export default function LoginForm() {
       return;
     }
     const session = await getSession();
-    const home = session?.user.role === "ADMIN" ? "/admin" : "/dashboard";
+    const home = session?.user.role === "ADMIN" ? "/admin" : "/home";
     const callbackUrl = params.get("callbackUrl");
     // 역할에 맞지 않는 callbackUrl 은 무시 (미들웨어가 어차피 차단)
     const target =
